@@ -1,106 +1,195 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Smart FarmHer</title>
+
+  <!-- PWA manifest + favicon -->
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" href="icons/Smartfarmher.png?v=1">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+  <!-- Tailwind (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
     body {
       background: #f9fafb;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    header {
-      padding: 15px;
-      background: #fff;
-      border-bottom: 1px solid #e5e7eb;
-      margin-bottom: 20px;
-    }
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .logo img {
-      height: 40px;
-      width: 40px;
-    }
-    .logo h1 {
+      font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
       margin: 0;
-      font-size: 1.5rem;
-      font-weight: 600;
-      color: #2e7d32;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
-    .logo p {
-      margin: 0;
-      font-size: 0.9rem;
-      color: #444;
+
+    header.site-header {
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:14px 20px;
+      background: #ffffff;
+      border-bottom: 1px solid rgba(15,23,42,0.04);
+      box-shadow: 0 2px 6px rgba(2,6,23,0.03);
+    }
+    .site-logo {
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+    .site-logo img.logo-img {
+      width:44px;
+      height:44px;
+      object-fit:contain;
+      border-radius:6px;
+      background:transparent;
+    }
+    .site-title {
+      line-height:1;
+      display:flex;
+      flex-direction:column;
+    }
+    .site-title .title-main {
+      font-size:20px;
+      color:#10b981;
+      font-weight:700;
+      margin:0;
+      letter-spacing:0.2px;
+    }
+    .site-title .title-sub {
+      margin:0;
+      font-size:13px;
+      color:#374151;
+      font-weight:600;
+    }
+    .logo-placeholder {
+      width:44px;
+      height:44px;
+      border-radius:6px;
+      background: linear-gradient(180deg,#ecfdf5 0%, #bbf7d0 100%);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:#065f46;
+      font-weight:700;
+    }
+    .start-bg {
+      background-color:#e8f6ee;
+      background-image: url('icons/bg-desktop.jpg');
+      background-size: cover;
+      background-position: center;
+      min-height: 100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 24px;
+    }
+    @media (max-width: 768px) {
+      .start-bg {
+        background-image: url('icons/bg-mobile.png');
+      }
     }
   </style>
 </head>
+
 <body>
-  <!-- Header / Logo -->
-  <header>
-    <div class="logo">
-      <img src="icons/Smartfarmher.png" alt="Smart FarmHer Logo">
-      <div>
-        <h1>Smart FarmHer</h1>
-        <p>Grow Good Sell Smart</p>
+  <!-- Header -->
+  <header class="site-header" role="banner">
+    <div class="site-logo">
+      <img src="icons/Smartfarmher.png" alt="Smart FarmHer" class="logo-img"
+           onerror="this.style.display='none'; this.insertAdjacentHTML('afterend','<div class=&quot;logo-placeholder&quot;>SF</div>')">
+      <div class="site-title">
+        <div class="title-main">Smart FarmHer</div>
+        <div class="title-sub">Grow Good Sell Smart</div>
       </div>
     </div>
   </header>
 
-  <!-- Landing Section -->
-  <div class="container my-4">
-    <div class="card shadow-sm">
-      <div class="card-body text-center">
-        <h2>Welcome to Smart FarmHer</h2>
-        <p class="text-muted">Your Agricultural Intelligence Dashboard</p>
-        <div class="mb-3">
-          <input type="file" id="fileInput" class="form-control mb-2">
-          <button class="btn btn-success" onclick="loadPreloaded()">🌱 Load Preloaded Data</button>
-          <button class="btn btn-dark" onclick="loadSaved()">💾 Load Saved</button>
+  <!-- Start screen -->
+  <div id="start-screen" class="start-bg">
+    <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-2xl">
+      <h1 class="text-2xl font-bold text-center mb-2">Welcome to Smart FarmHer</h1>
+      <p class="text-center text-gray-600 mb-6">Grow Good Sell Smart</p>
+      <div class="flex flex-col items-center gap-4">
+        <input type="file" id="fileInput" class="border p-2 rounded w-full">
+        <div class="flex gap-4">
+          <button onclick="loadPreloaded()" class="px-4 py-2 rounded bg-green-600 text-white font-semibold flex items-center gap-2">
+            🌱 Load Preloaded Data
+          </button>
+          <button onclick="loadSaved()" class="px-4 py-2 rounded bg-gray-800 text-white font-semibold flex items-center gap-2">
+            💾 Load Saved
+          </button>
         </div>
-        <small class="text-muted">
-          Tip: import your CSV/XLSX file with market rows. Use saved data to keep it on your phone.  
-        </small>
+        <p class="text-sm text-gray-500 mt-2">Tip: import your CSV/XLSX file with market rows. Use saved data to keep it on your phone.</p>
       </div>
     </div>
   </div>
 
-  <!-- Dashboard Content -->
-  <div class="container my-4" id="dashboard" style="display:none;">
-    <ul class="nav nav-tabs">
-      <li class="nav-item"><a class="nav-link active" href="#" onclick="switchTab('dashboard')">Dashboard</a></li>
-      <li class="nav-item"><a class="nav-link" href="#" onclick="switchTab('predictive')">Predictive Analysis</a></li>
-      <li class="nav-item"><a class="nav-link" href="#" onclick="switchTab('topcrops')">Top 10 Crops</a></li>
-    </ul>
-    <div id="tab-content" class="p-3 bg-white shadow-sm mt-2">
-      <!-- Dynamic content loads here -->
-    </div>
+  <!-- Dashboard (hidden until data is loaded) -->
+  <div id="dashboard" class="hidden p-4">
+    <h2 class="text-xl font-bold">Dashboard</h2>
+    <canvas id="priceChart" class="mt-4"></canvas>
+    <div id="strategic-outlook" class="mt-6"></div>
   </div>
 
   <script>
-    function loadPreloaded() {
-      alert("Preloaded dataset loading... (hook your CSV fetch here)");
-      document.getElementById('dashboard').style.display = 'block';
-    }
-    function loadSaved() {
-      alert("Load saved dataset... (hook localStorage load here)");
-      document.getElementById('dashboard').style.display = 'block';
-    }
-    function switchTab(tab) {
-      const tabs = document.querySelectorAll('.nav-link');
-      tabs.forEach(el => el.classList.remove('active'));
-      event.target.classList.add('active');
-      document.getElementById('tab-content').innerHTML = `<h4>${tab} content will appear here</h4>`;
+    // Preload dataset from GitHub raw
+    async function loadPreloaded() {
+      try {
+        const url = "https://raw.githubusercontent.com/chetankdrmz-max/Smart_FarmHer/main/data/Raw_Concatenated.csv";
+        const resp = await fetch(url);
+        const text = await resp.text();
+        localStorage.setItem("agri_dashboard_data", text);
+        document.getElementById("start-screen").classList.add("hidden");
+        document.getElementById("dashboard").classList.remove("hidden");
+        renderChart();
+      } catch (err) {
+        alert("Preload failed: " + err);
+      }
     }
 
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js').catch(err => console.warn("SW failed", err));
+    // Load saved data
+    function loadSaved() {
+      const saved = localStorage.getItem("agri_dashboard_data");
+      if (saved) {
+        document.getElementById("start-screen").classList.add("hidden");
+        document.getElementById("dashboard").classList.remove("hidden");
+        renderChart();
+      } else {
+        alert("No saved data found.");
+      }
+    }
+
+    // Dummy chart
+    function renderChart() {
+      const ctx = document.getElementById("priceChart").getContext("2d");
+      new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: ["Jan", "Feb", "Mar", "Apr"],
+          datasets: [{
+            label: "Price Trend",
+            data: [20, 40, 35, 50],
+            borderColor: "#10b981",
+            fill: false
+          }]
+        },
+        options: {
+          responsive: true
+        }
+      });
+      document.getElementById("strategic-outlook").innerHTML = `
+        <div class="mt-6 grid grid-cols-2 gap-4">
+          <div class="p-4 bg-yellow-100 rounded-lg">
+            <h3 class="text-lg font-bold text-yellow-800">Strategic Signal</h3>
+            <p class="text-yellow-700">Wait — prices are stable/decreasing.</p>
+          </div>
+          <div class="p-4 bg-green-100 rounded-lg">
+            <h3 class="text-lg font-bold text-green-800">Peak Profitability</h3>
+            <p class="text-green-700">May — best month historically.</p>
+          </div>
+        </div>`;
     }
   </script>
 </body>
