@@ -5,10 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Smart FarmHer — Grow Good Sell Smart</title>
 
-  <!-- PWA manifest -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#10b981">
-
   <!-- UI libraries -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -19,21 +15,41 @@
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-    :root{--emerald:#10b981;--muted:#6b7280;--card:#ffffff;--bg:#f3f6f8}
-    body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:var(--bg); color:#0f172a; margin:0; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;}
+    :root{
+      --emerald:#10b981;
+      --muted:#6b7280;
+      --card:#ffffff;
+      --bg:#f3f6f8;
+    }
+    html,body { height:100%; margin:0; }
+    body {
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background:var(--bg);
+      color:#0f172a;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      margin:0;
+    }
     .card { background: var(--card); border-radius: 12px; padding: 16px; box-shadow: 0 6px 18px rgba(2,6,23,0.06); border: 1px solid rgba(15,23,42,0.04); }
-    .start-bg { background-image: url('icons/bg-desktop.jpg'); background-size:cover; background-position:center; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
+    .start-bg {
+      background-image: url('icons/bg-desktop.jpg');
+      background-size:cover;
+      background-position:center;
+      min-height:100vh;
+      display:flex;
+      align-items:flex-start;    /* moved to top */
+      justify-content:center;
+      padding:40px 20px 80px 20px;
+    }
     @media (max-width:768px){ .start-bg{ background-image:url('icons/bg-mobile.png'); } }
     .small-muted { color: var(--muted); font-size:13px; }
-    .sidebar { min-width: 260px; max-width: 320px; background: #fff; border-right:1px solid rgba(15,23,42,0.04); padding:16px; display:flex; flex-direction:column; gap:12px; }
-    .sidebar .list { max-height:300px; overflow:auto; border:1px solid rgba(15,23,42,0.04); border-radius:8px; padding:6px; }
+    .sidebar { min-width: 260px; max-width: 320px; background: #fff; border-right:1px solid rgba(15,23,42,0.04); padding:20px; display:flex; flex-direction:column; gap:14px; height:calc(100vh - 40px); position:sticky; top:20px; }
+    .sidebar .list { max-height:260px; overflow:auto; border:1px solid rgba(15,23,42,0.04); border-radius:8px; padding:6px; }
     .sidebar button.primary { background:var(--emerald); color:white; padding:10px; border-radius:8px; }
     .nav-tabs button.active { border-bottom:3px solid var(--emerald); color:var(--emerald); font-weight:600; }
-
-    .snapshot-table { max-height:220px; overflow:auto; display:block; }
+    .snapshot-table { max-height:160px; overflow:auto; display:block; }
     .snapshot-table table { width:100%; border-collapse:collapse; }
     .snapshot-table td, .snapshot-table th { padding:8px; border-bottom:1px solid rgba(15,23,42,0.04); font-size:13px; }
-
     .recommend-card { border-radius:10px; padding:12px; border:1px solid rgba(16,185,129,0.08); background:linear-gradient(180deg, rgba(16,185,129,0.02), transparent); }
     .strategy-card { border-radius:10px; padding:14px; }
     .strategy-buy { background:#ecfdf5; border:1px solid #bbf7d0; color:#065f46; }
@@ -41,86 +57,35 @@
     .strategy-sell { background:#fff1f2; border:1px solid #fecaca; color:#7f1d1d; }
     .top-recs { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; }
     .chart-card { height:360px; }
-
-    /* ===== commodity list interactive styles ===== */
-    .commodity-btn {
-      display:block;
-      width:100%;
-      text-align:left;
-      padding:10px 12px;
-      border-radius:8px;
-      border:none;
-      background:transparent;
-      color: #0f172a;
-      font-weight:500;
-      transition: background-color 160ms ease, transform 120ms ease;
-      cursor:pointer;
-    }
-    .commodity-btn:hover { background: #f3f4f6; } /* light grey hover */
-    .commodity-btn.active {
-      background: var(--emerald);
-      color: #fff;
-      font-weight:700;
-      box-shadow: 0 6px 16px rgba(16,185,129,0.12);
-      transform: translateY(-1px);
-    }
-    .commodity-highlight {
-      background: var(--emerald) !important;
-      color: #fff !important;
-      border-radius:8px;
-      padding:10px;
-    }
-
-    /* Date input wrapper */
-    .date-input-row { display:flex; gap:10px; align-items:center; }
-    .date-input-wrapper { position:relative; display:flex; align-items:center; }
-    .date-input-wrapper input[type="date"] {
-      padding:10px 36px 10px 12px;
-      border-radius:8px;
-      border:1px solid rgba(15,23,42,0.06);
-      background:#fff;
-    }
-    .date-input-wrapper .date-icon {
-      position:absolute;
-      right:8px;
-      width:28px;
-      height:28px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      border-radius:6px;
-      cursor:pointer;
-      color:var(--muted);
-    }
-    .date-input-wrapper .date-icon:hover { background:#f3f4f6; }
-
-    @media (max-width: 900px) {
+    /* brand icon */
+    .brand-icon { width:31px; height:31px; display:inline-block; vertical-align:middle; margin-right:10px; border-radius:6px; object-fit:cover; }
+    .brand-title { display:inline-block; vertical-align:middle; line-height:1; }
+    .brand-sub { display:block; font-size:13px; color:var(--muted); margin-top:4px; }
+    /* hover effect for commodity list */
+    #commodity-list button:hover { background:#f3f4f6; transition: background 120ms ease; cursor:pointer; }
+    #commodity-list button.selected { background:var(--emerald); color:#fff; border-radius:8px; padding-left:10px; padding-right:10px; }
+    /* mobile tweaks */
+    @media (max-width:900px) {
       .sidebar { display:none; }
       .main-wrap { padding:14px; }
       .card { padding:12px; border-radius:10px; }
       .chart-card { height:260px; }
-      .date-input-row { flex-direction:column; align-items:stretch; }
-      .date-input-wrapper input[type="date"] { width:100%; }
     }
-
-    /* forecast card constrained */
-    .chart-card { height: 340px; }
-    #forecast-card { height:340px; }
-    #forecast-card canvas { max-height:100%; }
-    canvas { max-width:100%; display:block; }
+    /* subtle focus for date inputs */
+    input[type="date"]:focus, select:focus { outline: 2px solid rgba(16,185,129,0.12); border-radius:6px; }
   </style>
 </head>
 <body>
 
   <!-- START SCREEN -->
   <div id="start-screen" class="start-bg">
-    <div class="card" style="max-width:900px; width:100%; position:relative; top:40px">
+    <div class="card" style="max-width:900px; width:100%; margin-top:24px;">
       <div style="display:flex;align-items:center;gap:12px;justify-content:space-between">
         <div style="display:flex;align-items:center;gap:12px">
-          <img src="icons/Smartfarmher.png" id="brand-icon" style="width:44px;height:44px;object-fit:contain;border-radius:6px" alt="SmartFarmHer Icon">
+          <img src="icons/Smartfarmher.png" alt="Smart FarmHer" class="brand-icon" />
           <div>
-            <h1 style="margin:0;font-size:26px;color:var(--emerald);display:flex;align-items:center;gap:8px;font-weight:700">Smart FarmHer</h1>
-            <div style="color:#374151;font-weight:600;margin-top:4px">Grow Good Sell Smart</div>
+            <div class="brand-title" style="font-size:24px;font-weight:700;color:var(--emerald)">Smart FarmHer</div>
+            <div class="brand-sub">Grow Good Sell Smart</div>
           </div>
         </div>
         <div>
@@ -129,31 +94,28 @@
       </div>
 
       <div style="margin-top:18px;display:flex;gap:12px;flex-wrap:wrap;align-items:center">
-        <input id="file-input" type="file" accept=".csv,.xlsx,.xls,text/csv" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)"/>
-      </div>
-
-      <div style="margin-top:18px;display:flex;gap:12px;align-items:center;justify-content:center">
-        <button id="start-analysis-btn" class="primary" style="padding:10px 18px; border:none; cursor:pointer;background:var(--emerald);color:white;border-radius:8px"><i class="fas fa-cloud-download-alt"></i> Load Preloaded Data</button>
+        <input id="file-input" type="file" accept=".csv,.xlsx,.xls,text/csv" style="flex:1;padding:12px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)"/>
+        <button id="start-analysis-btn" class="primary" style="padding:10px 18px; border:none; cursor:pointer;"><i class="fas fa-cloud-download-alt"></i> Load Preloaded Data</button>
         <button id="load-local-btn" style="padding:10px 18px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);background:#111827;color:white;"><i class="fas fa-save"></i> Load Saved</button>
       </div>
 
-      <div style="margin-top:12px" class="small-muted">Tip: import your CSV/XLSX file with market rows. Use saved data to keep it on your phone. Use "Load Preloaded Data" to fetch dataset hosted in repo.</div>
+      <div style="margin-top:8px" class="small-muted">Tip: import your CSV/XLSX file with market rows. Use saved data to keep it on your phone. Use "Load Preloaded Data" to fetch dataset hosted in repo.</div>
     </div>
   </div>
 
   <!-- MAIN -->
   <div id="main-dashboard" class="hidden" style="display:flex;min-height:100vh">
     <!-- Sidebar -->
-    <aside class="sidebar">
+    <aside class="sidebar" aria-label="Controls">
       <div style="display:flex;align-items:center;gap:8px">
-        <img src="icons/Smartfarmher.png" style="width:28px;height:28px;object-fit:cover;border-radius:6px" alt="icon">
-        <div style="font-weight:700;color:var(--emerald);font-size:16px">Smart FarmHer</div>
+        <img src="icons/Smartfarmher.png" class="brand-icon" style="width:28px;height:28px"/>
+        <div style="font-weight:700;color:var(--emerald)">Smart FarmHer</div>
       </div>
 
       <div>
         <label class="small-muted">Markets</label>
-        <select id="market-select" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);margin-top:6px"></select>
-        <div style="margin-top:6px;display:flex;gap:8px">
+        <select id="market-select" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);margin-top:6px"></select>
+        <div style="margin-top:8px;display:flex;gap:8px">
           <button id="geo-locate" title="Detect my location" class="small-muted" style="padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);background:#fff"><i class="fas fa-location-arrow"></i></button>
           <button id="manage-markets-btn" title="Manage markets" class="small-muted" style="padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);background:#fff">Manage</button>
         </div>
@@ -161,30 +123,24 @@
 
       <div>
         <label class="small-muted">Category</label>
-        <select id="category-filter" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);margin-top:6px"><option>All</option></select>
+        <select id="category-filter" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);margin-top:6px"><option>All</option></select>
       </div>
 
       <div>
         <label class="small-muted">Commodity</label>
-        <div id="commodity-list" class="list"></div>
+        <div id="commodity-list" class="list" aria-label="Commodities list"></div>
       </div>
 
       <div>
         <label class="small-muted">Variety</label>
-        <select id="variety-filter" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);margin-top:6px"><option>All</option></select>
+        <select id="variety-filter" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);margin-top:6px"><option>All</option></select>
       </div>
 
       <div>
         <label class="small-muted">Date range</label>
-        <div class="date-input-row" style="margin-top:6px">
-          <div class="date-input-wrapper" style="flex:1">
-            <input id="start-date" type="date"/>
-            <div class="date-icon" title="Open date">📅</div>
-          </div>
-          <div class="date-input-wrapper" style="flex:1">
-            <input id="end-date" type="date"/>
-            <div class="date-icon" title="Open date">📅</div>
-          </div>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <input id="start-date" type="date" placeholder="dd-mm-yyyy" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)"/>
+          <input id="end-date" type="date" placeholder="dd-mm-yyyy" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)"/>
         </div>
       </div>
 
@@ -271,9 +227,9 @@
 
       <!-- Predictive Analysis -->
       <div id="prediction-content" class="hidden">
-        <div class="card" id="forecast-card" style="margin-bottom:12px">
+        <div class="card" style="margin-bottom:12px">
           <h3 style="margin:0 0 8px 0">90-Day Price Forecast</h3>
-          <div style="height:260px"><canvas id="forecast-chart" style="width:100%;height:100%"></canvas></div>
+          <canvas id="forecast-chart" style="width:100%;height:300px"></canvas>
         </div>
 
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
@@ -299,8 +255,6 @@
           <h3 style="margin:0 0 8px 0">Top Crop Recommendations</h3>
           <div id="top-crops-container" class="top-recs"></div>
         </div>
-
-        <div id="grow-sheet" class="card"></div>
       </div>
 
     </div>
@@ -347,7 +301,7 @@ let markets = [];
 let filteredRows = [];
 let currentCommodity = '';
 let currentVariety = 'All';
-let priceChart=null, distributionChart=null, forecastChart=null;
+let priceChart=null, forecastChart=null;
 
 /* -----------------------
    IndexedDB helpers
@@ -392,47 +346,26 @@ function parseCSVText(text,options={header:true,skipEmptyLines:true}){ return ne
    Row normalization & processing
    ----------------------- */
 function normalizeRow(r){
-  const dateStr = r.Date || r.date || r.DATE || r.date_of || '';
-  const commodity = (r.Commodity || r.commodity || r.Item || r.ItemName || '').toString().trim();
-  const variety = (r.Variety || r.variety || r.SubVariety || r.SubVarietyName || '').toString().trim() || 'Default';
-  const market = (r.Market || r.market || r.MarketName || r.market_name || '').toString().trim() || 'Default Market';
-  const district = (r.District || r.district || '').toString().trim();
-  const modal = parseFloat(r.Modal_Price_Kg || r.Modal_Price || r.modal || r.Modal_Price || r.modalprice || 0) || 0;
-  const minp = parseFloat(r.Min_Price_Kg || r.Min_Price || r.Min_Price_Q || r.min || 0) || 0;
-  const maxp = parseFloat(r.Max_Price_Kg || r.Max_Price || r.Max_Price_Q || r.max || 0) || 0;
-  const category = (r.Category || r.category || '').toString().trim() || 'Other';
+  const dateStr = r.Date || r.date || r.DATE || r['Date'] || '';
+  const commodity = (r.Commodity || r.commodity || r.Item || r['Commodity'] || '').toString().trim();
+  const variety = (r.Variety || r.variety || r.SubVariety || r['Variety'] || '').toString().trim() || 'Default';
+  const market = (r.Market || r.market || r.MarketName || r['Market'] || '').toString().trim() || 'Default Market';
+  const district = (r.District || r.district || r['District'] || '').toString().trim();
+  const modal = parseFloat(r.Modal_Price_Kg || r.Modal_Price || r.modal || r.Modal_Price || r['Modal'] || 0) || 0;
+  const minp = parseFloat(r.Min_Price_Kg || r.Min_Price || r.Min_Price_Q || r['Min'] || 0) || 0;
+  const maxp = parseFloat(r.Max_Price_Kg || r.Max_Price || r.Max_Price_Q || r['Max'] || 0) || 0;
+  const category = (r.Category || r.category || r['Category'] || '').toString().trim() || 'Other';
   const date = dateStr ? new Date(dateStr) : null;
   return { date, commodity, variety, market, district, modalPriceKg: modal, minPriceKg: minp, maxPriceKg: maxp, category };
 }
 
 function processPreloadedData(rows){
-  // If rows is array of objects or array-of-arrays (Papa might output)
-  let parsedRows = [];
-  if(!rows || !rows.length) return;
-  if(Array.isArray(rows) && rows.length && typeof rows[0] === 'object' && !Array.isArray(rows[0])) {
-    parsedRows = rows;
-  } else if(Array.isArray(rows) && rows.length && Array.isArray(rows[0])) {
-    // array-of-arrays -> fallback (not typical)
-    // try to treat first row as header
-    const header = rows[0].map(h => h.toString().trim());
-    const dat = rows.slice(1).map(r => {
-      const obj = {};
-      for(let i=0;i<header.length;i++) obj[header[i]] = r[i]!==undefined?r[i]:'';
-      return obj;
-    });
-    parsedRows = dat;
-  } else {
-    parsedRows = rows;
-  }
-
-  const normalized = parsedRows.map(normalizeRow).filter(item => item && item.date instanceof Date && !isNaN(item.date.getTime()) && item.commodity);
-  if(!normalized.length) { alert('No valid rows found in dataset'); return; }
-  const foundMarkets = [...new Set(normalized.map(p=>p.market||'Default Market'))];
+  const parsed = rows.map(normalizeRow).filter(item => item && item.date instanceof Date && !isNaN(item.date.getTime()) && item.commodity);
+  if(!parsed.length){ alert('No valid rows found in preloaded file.'); return; }
+  const foundMarkets = [...new Set(parsed.map(p=>p.market||'Default Market'))];
   if(markets.length===0){ markets = foundMarkets.map(n=>({name:n,lat:null,lon:null})); } else { foundMarkets.forEach(m=>{ if(!markets.find(x=>x.name===m)) markets.push({name:m,lat:null,lon:null}); }); }
-  commodityRows = [...commodityRows, ...normalized];
-  // dedupe strictly identical rows? keep as is but sort
+  commodityRows = [...commodityRows, ...parsed];
   commodityRows.sort((a,b)=>new Date(a.date)-new Date(b.date));
-  // save
   saveToLocal().catch(()=>{});
   refreshAllUI();
 }
@@ -441,27 +374,17 @@ function processPreloadedData(rows){
    UI refresh & helpers
    ----------------------- */
 function refreshAllUI(){
-  try {
-    populateMarketSelect();
-    populateCategoryFilter();
-    populateCommodityList();
-    populateVarietyFilter();
-    setDefaultDateRange();
-    applyFilters();
-    updateSnapshotTable();
-    updateSummaryCards();
-    updatePriceChart();
-    updateDistributionChart();
-    updateDataTable();
-    if(typeof populateMarketsTable === 'function') populateMarketsTable();
-    // if prediction tab visible, compute forecast
-    const predEl = document.getElementById('prediction-content');
-    if(predEl && !predEl.classList.contains('hidden') && typeof computeForecastAndRender === 'function') {
-      try { computeForecastAndRender(); } catch(e) { console.warn('forecast error', e); }
-    }
-  } catch(e) {
-    console.warn('refreshAllUI error', e);
-  }
+  populateMarketSelect();
+  populateCategoryFilter();
+  populateCommodityList();
+  populateVarietyFilter();
+  setDefaultDateRange();
+  applyFilters();
+  updateSnapshotTable();
+  updateSummaryCards();
+  updatePriceChart();
+  updateDataTable();
+  if(!document.getElementById('prediction-content').classList.contains('hidden')) computeForecastAndRender();
 }
 
 function populateMarketSelect(){
@@ -475,47 +398,21 @@ function populateCategoryFilter(){
   sel.innerHTML = '<option value="All">All</option>'; cats.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
 }
 
-/* ===== REPLACED: populateCommodityList (interactive + highlight) ===== */
 function populateCommodityList(){
   const container = document.getElementById('commodity-list'); if(!container) return;
   const selCat = (document.getElementById('category-filter')||{}).value || 'All';
   const comms = [...new Set(commodityRows.filter(r => selCat==='All' || r.category===selCat).map(r=>r.commodity))].sort();
-  container.innerHTML='';
-
-  comms.forEach(c => {
+  container.innerHTML=''; comms.forEach(c => {
     const btn = document.createElement('button');
-    btn.className = 'commodity-btn';
     btn.textContent = c;
-    btn.setAttribute('data-commodity', c);
-
-    // highlight if currently selected
-    if(currentCommodity && currentCommodity === c) {
-      btn.classList.add('active');
-    }
-
-    btn.addEventListener('click', (ev) => {
-      // clear current active
-      document.querySelectorAll('.commodity-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      currentCommodity = c;
-      // reset variety filter and refresh
-      populateVarietyFilter();
-      applyFilters();
-    });
-
+    btn.className='';
+    btn.style.width='100%'; btn.style.textAlign='left'; btn.style.padding='10px'; btn.style.border='none'; btn.style.background='transparent';
+    btn.onclick = ()=>{ currentCommodity = c; document.querySelectorAll('#commodity-list button').forEach(x=>x.classList.remove('selected')); btn.classList.add('selected'); populateVarietyFilter(); applyFilters(); };
     container.appendChild(btn);
   });
-
-  // If none selected, choose first commodity to avoid empty view
-  if(!currentCommodity && comms.length) {
-    currentCommodity = comms[0];
-    const firstBtn = container.querySelector('.commodity-btn');
-    if(firstBtn) firstBtn.classList.add('active');
-    populateVarietyFilter();
-  }
+  if(!currentCommodity && comms.length) { currentCommodity = comms[0]; const first = container.querySelector('button'); if(first) first.classList.add('selected'); populateVarietyFilter(); }
 }
 
-/* populate variety dropdown */
 function populateVarietyFilter(){
   const sel = document.getElementById('variety-filter'); if(!sel) return;
   const varieties = [...new Set(commodityRows.filter(r=>r.commodity===currentCommodity).map(r=>r.variety || 'Default'))].sort();
@@ -535,15 +432,10 @@ function setDefaultDateRange(){
 }
 
 function applyFilters(){
-  // ensure current commodity is present
-  if(!currentCommodity){
-    const firstBtn = document.querySelector('.commodity-btn');
-    if(firstBtn) currentCommodity = firstBtn.getAttribute('data-commodity');
-  }
-  currentVariety = (document.getElementById('variety-filter')||{}).value || 'All';
   const start = new Date((document.getElementById('start-date')||{}).value || '1970-01-01');
   const end = new Date((document.getElementById('end-date')||{}).value || '2100-01-01');
   const cat = (document.getElementById('category-filter')||{}).value || 'All';
+  currentVariety = (document.getElementById('variety-filter')||{}).value || 'All';
   filteredRows = commodityRows.filter(r=>{
     return (cat === 'All' || r.category === cat) &&
            (r.commodity === currentCommodity) &&
@@ -557,9 +449,8 @@ function resetFilters(){ document.getElementById('category-filter').value='All';
 
 function updateDashboardUI(){
   document.getElementById('main-header').textContent = currentCommodity ? `${currentCommodity} Dashboard` : 'Dashboard';
-  updateSnapshotTable(); updateSummaryCards(); updatePriceChart(); updateDistributionChart(); updateDataTable();
+  updateSnapshotTable(); updateSummaryCards(); updatePriceChart(); updateDataTable();
   renderWeatherForCurrentMarket();
-  // if on prediction tab, refresh forecast
   if(!document.getElementById('prediction-content').classList.contains('hidden')) computeForecastAndRender();
 }
 
@@ -573,16 +464,18 @@ function updateSnapshotTable(){
   const snapshot = commodityRows.filter(r => (new Date(r.date)).toISOString().split('T')[0] === latestStr);
   document.getElementById('snapshot-count').textContent = snapshot.length;
   if(!snapshot.length){ body.innerHTML='<tr><td colspan="7" style="text-align:center;padding:12px;color:var(--muted)">No data for latest date.</td></tr>'; return; }
-  body.innerHTML = snapshot.map(s => {
-    // trend: compare last two values for that commodity+variety in that market
-    const related = commodityRows.filter(rr=>rr.commodity===s.commodity && rr.variety===s.variety && rr.market===s.market).sort((a,b)=>new Date(a.date)-new Date(b.date));
-    let trendHtml = '—';
-    if(related.length>=2){
-      const last = related[related.length-1].modalPriceKg, prev = related[related.length-2].modalPriceKg;
-      if(last > prev) trendHtml = '<span style="color:#059669">▲</span>'; else if(last < prev) trendHtml = '<span style="color:#ef4444">▼</span>'; else trendHtml = '—';
-    }
-    return `<tr><td style="padding:8px">${s.market}</td><td style="padding:8px">${s.commodity}</td><td style="padding:8px">${s.variety}</td><td style="padding:8px;text-align:right">₹${s.modalPriceKg.toFixed(2)}</td><td style="padding:8px;text-align:right">₹${s.minPriceKg.toFixed(2)}</td><td style="padding:8px;text-align:right">₹${s.maxPriceKg.toFixed(2)}</td><td style="padding:8px;text-align:center">${trendHtml}</td></tr>`;
-  }).join('');
+  body.innerHTML = snapshot.map(s => `<tr><td style="padding:8px">${s.market}</td><td style="padding:8px">${s.commodity}</td><td style="padding:8px">${s.variety}</td><td style="padding:8px;text-align:right">₹${s.modalPriceKg.toFixed(2)}</td><td style="padding:8px;text-align:right">₹${s.minPriceKg.toFixed(2)}</td><td style="padding:8px;text-align:right">₹${s.maxPriceKg.toFixed(2)}</td><td style="padding:8px;text-align:center">${trendSymbolForRow(s)}</td></tr>`).join('');
+}
+
+function trendSymbolForRow(r){
+  // quick look at previous modal price in same commodity/market to show arrow
+  const rows = commodityRows.filter(x=>x.commodity===r.commodity && x.market===r.market).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const idx = rows.findIndex(x=>new Date(x.date).getTime()===new Date(r.date).getTime());
+  if(idx <= 0) return '—';
+  const prev = rows[idx-1].modalPriceKg;
+  if(r.modalPriceKg > prev) return '<span style="color:#16a34a">▲</span>';
+  if(r.modalPriceKg < prev) return '<span style="color:#ef4444">▼</span>';
+  return '—';
 }
 
 function updateSummaryCards(){
@@ -593,7 +486,6 @@ function updateSummaryCards(){
   const prices = filteredRows.map(r=>r.modalPriceKg);
   const avg = prices.reduce((a,b)=>a+b,0)/prices.length;
   const minP = Math.min(...prices), maxP = Math.max(...prices);
-  const change = prev.modalPriceKg ? ((latest.modalPriceKg - prev.modalPriceKg)/prev.modalPriceKg)*100 : 0;
   const cards = [
     {title:'Latest Price', value:`₹${latest.modalPriceKg.toFixed(2)}`, sub: currentCommodity || ''},
     {title:'Average Price', value:`₹${avg.toFixed(2)}`, sub:'Period Avg'},
@@ -603,23 +495,17 @@ function updateSummaryCards(){
   container.innerHTML = cards.map(c=>`<div class="card"><div style="color:var(--muted);font-size:13px">${c.title}</div><div style="font-weight:700;font-size:20px;margin-top:6px">${c.value}</div><div class="small-muted">${c.sub||''}</div></div>`).join('');
 }
 
-/* === Price Chart (historical) === */
 function updatePriceChart(){
   const ctx = document.getElementById('price-chart')?.getContext('2d'); if(!ctx) return;
   if(priceChart) priceChart.destroy();
   if(!filteredRows.length) { ctx.clearRect(0,0,ctx.canvas.width, ctx.canvas.height); return; }
-  const dataHist = filteredRows.map(r=>({x:new Date(r.date), y:r.modalPriceKg}));
   priceChart = new Chart(ctx, {
     type:'line',
     data:{ datasets:[
-      { label:'Price Trend', data: dataHist, borderColor:'#10b981', backgroundColor:'rgba(16,185,129,0.06)', fill:true, tension:0.25, pointRadius:2 }
+      { label:'Price Trend', data: filteredRows.map(r=>({x:new Date(r.date), y:r.modalPriceKg})), borderColor:'rgb(34,197,94)', backgroundColor:'rgba(16,185,129,0.06)', fill:true, tension:0.25, pointRadius:3 }
     ] },
-    options: { parsing:false, responsive:true, maintainAspectRatio:false, scales:{ x:{ type:'time', time:{ unit:'month' }, grid:{ color:'rgba(15,23,42,0.04)' } }, y:{ beginAtZero:false, grid:{ color:'rgba(15,23,42,0.04)' } } }, plugins:{ legend:{display:true, position:'top'} } }
+    options: { parsing:false, scales:{ x:{ type:'time', time:{ unit:'month' } }, y:{ beginAtZero:false } }, plugins:{ legend:{display:true} } }
   });
-}
-
-function updateDistributionChart(){
-  // stub: no distribution on this page for now
 }
 
 /* Data table */
@@ -627,25 +513,22 @@ function updateDataTable(){
   const body = document.getElementById('price-table-body'); if(!body) return;
   if(!filteredRows.length){ body.innerHTML = '<tr><td colspan="8" style="padding:12px;text-align:center;color:var(--muted)">No data</td></tr>'; return; }
   const last = filteredRows.slice(-20).reverse();
-  body.innerHTML = last.map((r,i)=>`<tr style="border-bottom:1px solid rgba(15,23,42,0.04)"><td style="padding:10px">${new Date(r.date).toLocaleDateString()}</td><td style="padding:10px">${r.market}</td><td style="padding:10px">${r.commodity}</td><td style="padding:10px">${r.variety}</td><td style="padding:10px;text-align:right">₹${r.modalPriceKg.toFixed(2)}</td><td style="padding:10px;text-align:right">₹${r.minPriceKg.toFixed(2)}</td><td style="padding:10px;text-align:right">₹${r.maxPriceKg.toFixed(2)}</td><td style="padding:10px;text-align:center">—</td></tr>`).join('');
+  body.innerHTML = last.map(r=>`<tr style="border-bottom:1px solid rgba(15,23,42,0.04)"><td style="padding:10px">${new Date(r.date).toLocaleDateString()}</td><td style="padding:10px">${r.market}</td><td style="padding:10px">${r.commodity}</td><td style="padding:10px">${r.variety}</td><td style="padding:10px;text-align:right">₹${r.modalPriceKg.toFixed(2)}</td><td style="padding:10px;text-align:right">₹${r.minPriceKg.toFixed(2)}</td><td style="padding:10px;text-align:right">₹${r.maxPriceKg.toFixed(2)}</td><td style="padding:10px;text-align:center">${trendSymbolForRow(r)}</td></tr>`).join('');
 }
 
 /* -----------------------
-   Forecasting (lightweight deterministic)
+   Forecasting (lightweight)
    ----------------------- */
 function computeSimpleForecast(series, days=90){
-  // series: [{date:Date,y:Number}] sorted ascending
   if(!series.length) return [];
-  // smoothing
   const prices = series.map(s=>s.y);
   const smooth = prices.map((v,i,arr)=>{
-    const w=7;
+    const w=5;
     const start=Math.max(0,i-w+1);
     const seg=arr.slice(start,i+1);
     return seg.reduce((a,b)=>a+b,0)/seg.length;
   });
-  // linear regression on last N
-  const N = Math.min(90, smooth.length);
+  const N = Math.min(60, smooth.length);
   const x = [], y=[];
   for(let i=0;i<N;i++){ x.push(i); y.push(smooth[smooth.length-N+i]); }
   const xm = x.reduce((a,b)=>a+b,0)/x.length;
@@ -657,32 +540,21 @@ function computeSimpleForecast(series, days=90){
   const lastDate = new Date(series[series.length-1].date);
   const forecasts = [];
   for(let d=1; d<=days; d++){
-    const pred = intercept + slope*(N + d);
+    const pred = intercept + slope*(x.length-1 + d);
     forecasts.push({ date: new Date(lastDate.getTime() + 24*3600*1000*d), y: Math.max(0, pred) });
   }
   return forecasts;
 }
 
+/* Render forecast & strategy */
 function computeForecastAndRender(){
   if(!filteredRows.length){ document.getElementById('strategy-signal').textContent='—'; return; }
   const series = filteredRows.map(r=>({date:new Date(r.date), y:r.modalPriceKg}));
-  if(series.length < 30){
-    document.getElementById('strategy-signal').textContent = 'Not enough data';
-    document.getElementById('strategy-detail').textContent = 'Not enough historical data for reliable forecast (need >= 30 days).';
-    document.getElementById('peak-month').textContent = '—';
-    const container = document.getElementById('prediction-outlook'); container.innerHTML = '<div class="card small-muted">Not enough historical data for a reliable forecast (requires at least ~30 data points).</div>';
-    // clear canvas
-    const ctx = document.getElementById('forecast-chart')?.getContext('2d'); if(ctx && forecastChart) { forecastChart.destroy(); }
-    return;
-  }
-
   const forecast = computeSimpleForecast(series, 90);
-  // Chart: historical + forecast (dashed)
   const ctx = document.getElementById('forecast-chart').getContext('2d');
   if(forecastChart) forecastChart.destroy();
   const dataHist = series.map(s=>({x:s.date, y:s.y}));
   const dataFc = forecast.map(f=>({x:f.date, y:f.y}));
-
   forecastChart = new Chart(ctx, {
     type:'line',
     data:{
@@ -691,45 +563,45 @@ function computeForecastAndRender(){
         { label:'Forecasted Price', data: dataFc, borderColor:'#ef4444', borderDash:[6,6], pointRadius:0, fill:false, tension:0.25 }
       ]
     },
-    options:{
-      parsing:false,
-      responsive:true,
-      maintainAspectRatio:false,
-      scales:{ x:{ type:'time', time:{unit:'month'}, grid:{ color:'rgba(15,23,42,0.04)' } }, y:{ beginAtZero:false, grid:{ color:'rgba(15,23,42,0.04)' } } },
-      plugins:{ legend:{display:true, position:'top'} }
-    }
+    options:{ parsing:false, scales:{ x:{ type:'time', time:{unit:'month'} }, y:{ beginAtZero:false } }, plugins:{ legend:{display:true} } }
   });
 
-  // Strategy: check 30-day slope of forecast
-  const fvals = forecast.slice(0,30).map(f=>f.y);
-  const sl = (fvals[fvals.length-1] - fvals[0]) / Math.max(1, fvals[0]);
-  // volatility on historical
-  const avgHist = series.reduce((a,b)=>a+b.y,0)/series.length;
-  const variance = series.reduce((s,p)=>s+Math.pow(p.y - avgHist,2),0)/Math.max(1,series.length);
-  const vol = Math.sqrt(variance)/Math.max(1,avgHist);
-  const confidence = Math.max(0, Math.min(100, 100 - vol*200));
-  document.getElementById('forecast-confidence')?.textContent = `${Math.round(confidence)}%`;
+  // simpler strategic outlook: two outcomes
+  const recent = series.slice(-30).map(s=>s.y);
+  if(recent.length < 30){
+    document.getElementById('strategy-signal').textContent = 'Not enough data';
+    document.getElementById('strategy-detail').textContent = 'Not enough historical data for a reliable forecast (requires more history).';
+    document.getElementById('strategy-signal-card').className = 'strategy-card card';
+    document.getElementById('peak-month').textContent = '—';
+    document.getElementById('prediction-outlook').innerHTML = '<div class="card">Not enough historical data for a reliable forecast (requires at least one year).</div>';
+    return;
+  }
 
-  // Only two strategic outcomes: 'Consider Growing/Grow Now' vs 'Wait/Sell'
-  let signal = 'Wait', detail='Prices are forecast to be stable or decrease. The market is not currently in its peak seasonal period.';
-  const signalCard = document.getElementById('strategy-signal-card');
-  if(sl > 0.08 && confidence > 30){ signal='Grow Now'; detail='Prices are currently above average and trend shows growth — consider planting now.'; signalCard.className='strategy-card strategy-buy card'; }
-  else if(sl > 0.02){ signal='Consider Growing'; detail='The 90-day forecast shows a gentle positive trend. Planting soon could be profitable.'; signalCard.className='strategy-card strategy-buy card'; }
-  else { signal='Wait'; detail='Prices are forecast to be stable or decrease. The market is not currently in its peak seasonal period.'; signalCard.className='strategy-card strategy-wait card'; }
+  const startAvg = recent.slice(0,7).reduce((a,b)=>a+b,0)/7;
+  const endAvg = recent.slice(-7).reduce((a,b)=>a+b,0)/7;
+  const pctChange = (endAvg - startAvg) / Math.max(1, startAvg);
 
-  document.getElementById('strategy-signal').textContent = signal;
-  document.getElementById('strategy-detail').textContent = detail;
+  if(pctChange > 0.08){
+    document.getElementById('strategy-signal').textContent = 'Grow Now'; // optimistic
+    document.getElementById('strategy-detail').textContent = 'Prices are currently above average and trend is positive. Consider planting now.';
+    document.getElementById('strategy-signal-card').className = 'strategy-card strategy-buy card';
+  } else if(pctChange < -0.05){
+    document.getElementById('strategy-signal').textContent = 'Wait';
+    document.getElementById('strategy-detail').textContent = 'Prices are trending down. Consider waiting or selling existing stocks.';
+    document.getElementById('strategy-signal-card').className = 'strategy-card strategy-wait card';
+  } else {
+    document.getElementById('strategy-signal').textContent = 'Consider';
+    document.getElementById('strategy-detail').textContent = 'Market is relatively stable — moderate risk.';
+    document.getElementById('strategy-signal-card').className = 'strategy-card card';
+  }
 
-  // Peak month (historical averages)
+  // peak month by historical average
   const monthly = {};
   filteredRows.forEach(r=>{ const m = new Date(r.date).getMonth()+1; monthly[m] = monthly[m] || []; monthly[m].push(r.modalPriceKg); });
   const avgByMonth = Object.keys(monthly).map(k=>({m:parseInt(k), avg: monthly[k].reduce((a,b)=>a+b,0)/monthly[k].length}));
   if(avgByMonth.length){ const peak = avgByMonth.reduce((a,b)=>a.avg > b.avg ? a : b); const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; document.getElementById('peak-month').textContent = months[peak.m-1]; } else document.getElementById('peak-month').textContent='—';
 
-  // Simple forecast summary
-  const avg30 = (forecast.slice(0,30).reduce((a,b)=>a+b.y,0) / Math.max(1, forecast.slice(0,30).length));
-  const outlook = document.getElementById('prediction-outlook');
-  outlook.innerHTML = `<div class="card"><strong>Forecast summary:</strong> Next 90 days trend is ${(sl>0.05)?'positive':(sl<-0.05?'negative':'neutral')}. Forecast avg (first 30 days): ₹${avg30.toFixed(2)}.</div>`;
+  document.getElementById('prediction-outlook').innerHTML = `<div class="card"><strong>Forecast summary:</strong> 90-day outlook is ${(pctChange>0.08)?'positive':(pctChange<-0.05?'negative':'neutral')}. Average forecast price (30d): ₹${(forecast.slice(0,30).reduce((a,b)=>a+b.y,0)/Math.max(1,forecast.slice(0,30).length)).toFixed(2)}</div>`;
 }
 
 /* -----------------------
@@ -738,7 +610,7 @@ function computeForecastAndRender(){
 function generateRecommendations(count=10){
   const commodities = [...new Set(commodityRows.map(r=>r.commodity))];
   const recs = commodities.map(name=>{
-    const rows = commodityRows.filter(r=>r.commodity===name).slice(-90); // recent window
+    const rows = commodityRows.filter(r=>r.commodity===name).slice(-60);
     if(rows.length < 6) return null;
     const prices = rows.map(r=>r.modalPriceKg);
     const avg = prices.reduce((a,b)=>a+b,0)/prices.length;
@@ -755,29 +627,23 @@ function generateRecommendations(count=10){
 function generateTopCropsUI(){
   const recs = generateRecommendations(10);
   const cont = document.getElementById('top-crops-container'); if(!cont) return;
-  if(!recs.length){ cont.innerHTML = '<div class="small-muted">No recommendations available - load more data.</div>'; return; }
-  cont.innerHTML = recs.map((r,i)=>`<div class="recommend-card"><div style="display:flex;justify-content:space-between;align-items:start"><div><div style="font-size:14px;color:var(--muted)">#${i+1}</div><div style="font-weight:700;font-size:16px">${r.commodity}</div><div class="small-muted" style="margin-top:6px">Avg ₹${r.avgPrice.toFixed(2)}/kg</div></div><div style="text-align:right"><span style="background:${r.risk==='Low'?'#ecfdf5':r.risk==='Medium'?'#fffbeb':'#fff1f2'};padding:6px 8px;border-radius:12px;font-size:12px">${r.risk} RISK</span></div></div><div style="margin-top:8px;display:flex;gap:8px;justify-content:flex-end"><button onclick="showGrowSheet('${r.commodity.replace(/'/g,'\\\'')}')" style="background:var(--emerald);color:white;padding:8px;border-radius:8px;border:none">Grow Sheet</button></div></div>`).join('');
+  if(!recs.length){ cont.innerHTML = '<div class="small-muted">Not enough data for recommendations.</div>'; return; }
+  cont.innerHTML = recs.map((r,i)=>`<div class="recommend-card"><div style="display:flex;justify-content:space-between;align-items:start"><div><div style="font-size:14px;color:var(--muted)">#${i+1}</div><div style="font-weight:700;font-size:16px">${r.commodity}</div><div class="small-muted" style="margin-top:6px">Avg ₹${r.avgPrice.toFixed(2)}/kg</div></div><div style="text-align:right"><span style="background:${r.risk==='Low'?'#ecfdf5':r.risk==='Medium'?'#fffbeb':'#fff1f2'};padding:6px 8px;border-radius:12px;font-size:12px">${r.risk} RISK</span></div></div></div>`).join('');
 }
 
+/* Grow sheet - simplified removed per request (no youtube) */
 function showGrowSheet(commodity){
   const container = document.getElementById('grow-sheet'); if(!container) return;
   container.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">${commodity} — Grow Sheet</h3><div class="small-muted">Printable & shareable</div></div>
     <div style="margin-top:10px"><ul class="small-muted" style="line-height:1.6">
     <li><strong>Soil:</strong> Well-drained loam; pH 6.0–7.5</li>
     <li><strong>Sowing:</strong> Follow seasonal calendar for your region</li>
-    <li><strong>Spacing:</strong> Follow recommended spacing for variety</li>
     <li><strong>Irrigation:</strong> Regular irrigation; avoid waterlogging</li>
     <li><strong>Fertilizer:</strong> NPK per soil test; basal + top dressing</li>
     <li><strong>Pest management:</strong> IPM, biocontrol & spot sprays</li>
     <li><strong>Harvest:</strong> Harvest at maturity window for best price</li>
-    </ul></div>
-    <div style="margin-top:10px"><button onclick="printGrowSheet('${commodity.replace(/'/g,'\\\'')}')" style="background:#111827;color:white;padding:8px;border-radius:8px;border:none">Print</button></div>`;
+    </ul></div>`;
   container.scrollIntoView({behavior:'smooth'});
-}
-
-function printGrowSheet(commodity){
-  const html = `<html><head><title>Grow Sheet - ${commodity}</title></head><body><h2>Grow Sheet — ${commodity}</h2><p>Soil: Well-drained ...</p></body></html>`;
-  const w = window.open('','_blank'); w.document.write(html); w.document.close(); w.print();
 }
 
 /* -----------------------
@@ -818,48 +684,48 @@ async function handleFileImport(file){
     }
     alert('Imported successfully');
     showDashboardAfterLoad();
-  } catch(e){ console.error(e); alert('Import failed: ' + (e.message||e)); }
+  } catch(e){ console.error(e); alert('Import failed: ' + e.message); }
 }
 
 /* -----------------------
    Startup & buttons
    ----------------------- */
-function showDashboardAfterLoad(){ document.getElementById('start-screen').classList.add('hidden'); document.getElementById('main-dashboard').classList.remove('hidden'); refreshAllUI(); }
+function showDashboardAfterLoad(){ document.getElementById('start-screen').classList.add('hidden'); document.getElementById('main-dashboard').classList.remove('hidden'); refreshAllUI(); window.scrollTo(0,0); }
 
-/* small helpers */
-function escapeHtml(str){ return String(str||'').replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/'/g,"&#39;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
-
-/* wiring after DOM ready */
 document.addEventListener('DOMContentLoaded', () => {
-  // start visible
+  // keep start screen visible by default (no auto preload)
   document.getElementById('start-screen').classList.remove('hidden');
   document.getElementById('main-dashboard').classList.add('hidden');
 
-  // button: load preloaded
+  // wire start preloaded - IMPORTANT: ensure showDashboardAfterLoad() is always called after success
   document.getElementById('start-analysis-btn')?.addEventListener('click', async ()=>{
     if(!PRELOADED_RAW_URL) { alert('No PRELOADED_RAW_URL configured'); return; }
     try {
-      alert('Preloaded dataset loading... (hook your CSV fetch here)');
       const resp = await fetch(PRELOADED_RAW_URL);
       if(!resp.ok) throw new Error('Fetch failed: ' + resp.status);
       const contentType = resp.headers.get('content-type') || '';
       const blob = await resp.blob();
+      let rows = [];
       if(contentType.includes('text') || PRELOADED_RAW_URL.toLowerCase().endsWith('.csv')){
         const text = await blob.text();
-        const rows = await parseCSVText(text, {header:true,skipEmptyLines:true});
-        processPreloadedData(rows);
+        rows = await parseCSVText(text, {header:true,skipEmptyLines:true});
       } else {
         const ab = await blob.arrayBuffer();
         const wb = XLSX.read(ab, { type: 'array' });
         const sheet = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-        processPreloadedData(rows);
+        rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
       }
-      setTimeout(()=>showDashboardAfterLoad(), 250);
+
+      // process and always show dashboard on success
+      processPreloadedData(rows);
+      // ensure dashboard visible
+      setTimeout(()=> showDashboardAfterLoad(), 200);
     } catch(e) { console.error(e); alert('Preload failed: ' + (e.message||e)); }
   });
 
+  // load saved only when user clicks - do not auto-show dashboard on page load
   document.getElementById('load-local-btn')?.addEventListener('click', ()=>{ const ok = loadFromLocalSync(); setTimeout(()=>showDashboardAfterLoad(), 150); });
+
   document.getElementById('file-input')?.addEventListener('change', ev=>handleFileImport(ev.target.files[0]));
   document.getElementById('import-csv-btn')?.addEventListener('click', ()=>document.getElementById('file-input').click());
   document.getElementById('apply-filters')?.addEventListener('click', applyFilters);
@@ -882,42 +748,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const csv = ['Date,Market,Commodity,Variety,Min,Max,Modal', ...rows.map(r=>r.join(','))].join('\n');
     const link = document.createElement('a'); link.href='data:text/csv;charset=utf-8,' + encodeURIComponent(csv); link.download='export_filtered.csv'; document.body.appendChild(link); link.click(); link.remove();
   });
-
-  // load saved (but don't auto-open dash)
-  loadFromLocalSync();
-
-  // geolocation button
-  document.getElementById('geo-locate')?.addEventListener('click', ()=>{
-    if(!navigator.geolocation){ alert('Geolocation not supported'); return; }
-    navigator.geolocation.getCurrentPosition(pos=>{
-      const lat = pos.coords.latitude, lon = pos.coords.longitude;
-      const name = `My Location (${lat.toFixed(3)},${lon.toFixed(3)})`;
-      markets.unshift({ name, lat, lon });
-      saveToLocal().catch(()=>{});
-      populateMarketSelect();
-      document.getElementById('market-select').value = name;
-      renderWeatherForCurrentMarket();
-      alert('Location saved to markets list');
-    }, err=>{ alert('Failed to get location: ' + err.message); });
-  });
-
-  // make calendar icons focus input
-  document.querySelectorAll('.date-input-wrapper').forEach(wrapper => {
-    const icon = wrapper.querySelector('.date-icon');
-    const input = wrapper.querySelector('input[type="date"]');
-    if(icon && input) {
-      icon.addEventListener('click', ()=> input.focus());
-      icon.addEventListener('keydown', (e) => { if(e.key === 'Enter') input.focus(); });
-    }
-  });
-
 });
 
 /* Modal add/edit (simple) */
 function openAddModal(){
   document.getElementById('modal-add-record').style.display='flex';
   document.getElementById('delete-record-btn').style.display='none';
-  document.getElementById('rec-market').innerHTML = markets.map(m=>`<option value="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>`).join('');
+  document.getElementById('rec-market').innerHTML = markets.map(m=>`<option value="${m.name}">${m.name}</option>`).join('');
   document.getElementById('record-form').onsubmit = (e)=>{ e.preventDefault();
     const newRow = {
       date: new Date(document.getElementById('rec-date').value),
@@ -937,15 +774,6 @@ function openAddModal(){
     refreshAllUI();
   };
 }
-
-/* service worker registration */
-if ('serviceWorker' in navigator) {
-  const swPath = location.pathname.startsWith('/Smart_FarmHer') ? '/Smart_FarmHer/service-worker.js' : '/service-worker.js';
-  navigator.serviceWorker.register(swPath, { scope: location.pathname.startsWith('/Smart_FarmHer') ? '/Smart_FarmHer/' : '/' })
-    .then(reg => { console.log('Service worker registered:', reg); })
-    .catch(err => console.warn('SW registration failed:', err));
-}
-
 </script>
 
 </body>
