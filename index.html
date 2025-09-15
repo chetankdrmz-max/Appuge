@@ -269,7 +269,7 @@
 /* ===================
    Configuration
    =================== */
-const PRELOADED_RAW_URL = 'https://raw.githubusercontent.com/chetankdrmz-max/Smart_FarmHer/refs/heads/main/data/Raw_Concatenated.csv';
+const PRELOADED_RAW_URL = 'https://raw.githubusercontent.com/chetankdrmz-max/Appuge/0d8156a2def60e731e41efb36b95b785a4e6d92b/data/Raw_Concatenated.xlsx';
 const STORAGE_KEY = 'agri_dashboard_store_v1';
 const IDB_DBNAME = 'agri_analyst_db_v1';
 const IDB_STORE = 'store_v1';
@@ -363,7 +363,6 @@ function refreshAllUI(){
   updatePriceChart();
   updateDistributionChart();
   updateDataTable();
-  populateMarketsTable();
   // if on prediction tab, refresh forecast
   if(!document.getElementById('prediction-content').classList.contains('hidden')) computeForecastAndRender();
 }
