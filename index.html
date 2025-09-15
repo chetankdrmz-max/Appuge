@@ -3,62 +3,71 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AgriAnalyst Pro — Farmer (PWA)</title>
+  <title>Smart FarmHer — Grow Good Sell Smart</title>
 
-  <!-- PWA manifest & theme -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#10b981">
 
-  <!-- UI libs (CDN) -->
+  <!-- UI libs -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+  <!-- Parsers & PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/papaparse/5.4.1/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-    body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:#f0f2f5; }
+    body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; background:#f0f2f5; }
     .sidebar { -ms-overflow-style: none; scrollbar-width: none; }
     .sidebar::-webkit-scrollbar { display: none; }
     .sidebar-item.active { background-color: #10b981; color: white; }
     .chart-container { position: relative; height: 360px; width: 100%; }
     .tab-active { border-bottom-color: #10b981; color: #059669; font-weight:600; }
+    .start-overlay { background: rgba(255,255,255,0.86); backdrop-filter: blur(4px); }
+    .crop-icon { width:28px; height:28px; object-fit:cover; border-radius:4px; margin-right:8px; display:inline-block; vertical-align:middle; }
   </style>
 </head>
 <body class="text-slate-800">
 
 <!-- START SCREEN -->
-<div id="start-screen" class="flex flex-col items-center justify-center min-h-screen p-4">
-  <div class="w-full max-w-2xl text-center">
-    <div class="bg-white p-8 rounded-2xl shadow-xl border border-slate-200">
-      <h1 class="text-3xl font-bold text-emerald-600 mb-2"><i class="fas fa-seedling mr-2"></i>AgriAnalyst Pro — Farmer</h1>
-      <p class="text-slate-500 mb-4">Open this file daily to check prices, add new commodity rows, and get crop recommendations. All data remains on your device.</p>
+<div id="start-screen" class="flex flex-col items-center justify-center min-h-screen p-4 bg-cover bg-center" 
+     style="background-image: url('icons/start-bg.png');">
+  <div class="w-full max-w-2xl text-center start-overlay p-8 rounded-2xl shadow-xl border border-slate-200">
+    <h1 class="text-3xl font-bold text-emerald-600 mb-1"><i class="fas fa-seedling mr-2"></i>Smart FarmHer</h1>
+    <div class="text-slate-600 mb-2 font-medium">Grow Good — Sell Smart</div>
+    <p class="text-slate-500 mb-4">Open daily to check market prices, import new data, and get crop recommendations. Data stays on your device.</p>
 
-      <div class="space-y-3">
-        <input id="file-input" type="file" accept=".csv,.xlsx,.xls,text/csv" class="w-full" />
-        <div class="flex gap-3">
-          <button id="start-analysis-btn" class="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-lg"><i class="fas fa-chart-line mr-2"></i> Start (preloaded)</button>
-          <button id="load-local-btn" class="bg-slate-700 text-white font-bold py-3 px-4 rounded-lg"><i class="fas fa-save mr-2"></i> Load Saved</button>
-        </div>
-        <p class="text-xs text-slate-400">Tip: use "Load Saved" to restore your previous data from the browser storage. Use the file input to import your CSV or Excel file.</p>
+    <div class="space-y-3">
+      <input id="file-input" type="file" accept=".csv,.xlsx,.xls,text/csv" class="w-full" />
+      <div class="flex gap-3">
+        <button id="start-analysis-btn" class="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-lg">
+          <i class="fas fa-cloud-download-alt mr-2"></i>Load Preloaded Data
+        </button>
+        <button id="load-local-btn" class="bg-slate-700 text-white font-bold py-3 px-4 rounded-lg">
+          <i class="fas fa-save mr-2"></i>Load Saved
+        </button>
       </div>
+      <p class="text-xs text-slate-700">Tip: add market coordinates to see 7-day weather. Use "Import" to add new rows anytime.</p>
     </div>
   </div>
 </div>
 
-<!-- MAIN DASHBOARD -->
+<!-- MAIN DASHBOARD (unchanged layout, trimmed to essentials for readability) -->
 <div id="main-dashboard" class="hidden h-screen">
   <div class="flex h-full">
-
-    <!-- SIDEBAR -->
     <aside class="w-72 bg-white border-r p-3 flex flex-col sidebar overflow-y-auto">
-      <div class="h-14 flex items-center justify-center border-b mb-3">
-        <h1 class="text-xl font-bold text-emerald-600"><i class="fas fa-seedling mr-2"></i>AgriAnalyst</h1>
+      <div class="h-16 flex items-center justify-between border-b mb-3 px-2">
+        <div>
+          <h1 class="text-xl font-bold text-emerald-600"><i class="fas fa-seedling"></i> Smart FarmHer</h1>
+          <div class="text-xs text-slate-500">Grow Good — Sell Smart</div>
+        </div>
+        <div id="storage-badge" class="text-xs text-slate-600"></div>
       </div>
 
-      <!-- Market selector / Manage markets -->
       <div class="mb-3">
         <div class="flex items-center justify-between mb-1">
           <h2 class="text-xs font-semibold text-slate-500 uppercase">Markets</h2>
@@ -68,7 +77,6 @@
         <div class="mt-2 text-xs text-slate-400">Select market to show weather & specific market prices</div>
       </div>
 
-      <!-- Controls -->
       <div class="mb-3">
         <h2 class="text-xs font-semibold text-slate-500 uppercase mb-2">Filters</h2>
         <label class="text-xs">Category</label>
@@ -92,17 +100,15 @@
         </div>
       </div>
 
-      <!-- Quick actions -->
       <div class="mt-auto space-y-2">
         <button id="add-record-btn" class="w-full bg-blue-500 text-white py-2 rounded-md"><i class="fas fa-plus mr-2"></i>Add Record</button>
         <button id="import-csv-btn" class="w-full bg-slate-700 text-white py-2 rounded-md"><i class="fas fa-file-import mr-2"></i>Import CSV/XLSX</button>
         <button id="export-all-btn" class="w-full bg-slate-200 text-slate-800 py-2 rounded-md"><i class="fas fa-file-export mr-2"></i>Export CSV (All)</button>
         <button id="clear-storage-btn" class="w-full bg-red-50 text-red-600 py-2 rounded-md"><i class="fas fa-trash mr-2"></i>Clear Local Save</button>
-        <div class="text-xs text-slate-400 mt-2">All edits save to your browser. Export before clearing storage.</div>
+        <div class="text-xs text-slate-400 mt-2">All edits save locally. Export before clearing storage.</div>
       </div>
     </aside>
 
-    <!-- MAIN -->
     <main class="flex-1 overflow-y-auto bg-slate-100 p-6">
       <header class="flex items-center justify-between mb-6">
         <h2 id="main-header" class="text-2xl font-bold">Dashboard</h2>
@@ -121,9 +127,8 @@
         </nav>
       </div>
 
-      <!-- CONTENT: Dashboard -->
+      <!-- Dashboard Content (snapshot + charts + table) -->
       <div id="dashboard-content">
-        <!-- Snapshot -->
         <div class="bg-white p-4 rounded-lg shadow mb-4">
           <div class="flex justify-between items-start">
             <div>
@@ -143,10 +148,8 @@
           </div>
         </div>
 
-        <!-- Cards -->
         <div id="summary-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4"></div>
 
-        <!-- Charts -->
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-4">
           <div class="lg:col-span-3 bg-white p-4 rounded shadow">
             <h4 class="font-semibold mb-2">Historical Price Trends</h4>
@@ -158,7 +161,6 @@
           </div>
         </div>
 
-        <!-- Table -->
         <div class="bg-white p-4 rounded shadow">
           <div class="flex justify-between items-center mb-2">
             <h4 class="font-semibold">Detailed Price Data (last 20 rows)</h4>
@@ -175,7 +177,7 @@
         </div>
       </div>
 
-      <!-- CONTENT: Prediction & Weather -->
+      <!-- Prediction -->
       <div id="prediction-content" class="hidden">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div class="lg:col-span-2 bg-white p-4 rounded shadow">
@@ -188,15 +190,14 @@
             <div class="mt-4 text-xs text-slate-500">Weather powered by Open-Meteo (free, no key)</div>
           </div>
         </div>
-
         <div id="prediction-outlook" class="mt-4"></div>
       </div>
 
-      <!-- CONTENT: Top crops -->
+      <!-- Top crops -->
       <div id="top-crops-content" class="hidden">
         <div class="bg-white p-4 rounded shadow mb-4">
           <h4 class="font-semibold">Top 10 Crops to Grow Next</h4>
-          <p class="text-xs text-slate-500">Ranked by profitability score (avg price, trend, volatility)</p>
+          <p class="text-xs text-slate-500">Ranked by profitability score (avg price, momentum, stability). Click a crop for a growing guide, video list, print, or PDF download.</p>
         </div>
         <div id="top-crops-container" class="space-y-2"></div>
       </div>
@@ -204,34 +205,7 @@
   </div>
 </div>
 
-<!-- MODALS: Add Record, Manage Markets, Help -->
-<!-- Add Record Modal -->
-<div id="modal-add-record" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
-  <div class="bg-white w-full max-w-2xl rounded p-4">
-    <div class="flex justify-between items-center mb-3">
-      <h3 class="font-bold text-lg">Add / Edit Record</h3>
-      <button id="close-add-record" class="text-slate-500">&times;</button>
-    </div>
-    <form id="record-form" class="grid grid-cols-1 md:grid-cols-2 gap-2">
-      <div><label class="text-xs">Date</label><input id="rec-date" type="date" class="w-full p-2 border rounded" required></div>
-      <div><label class="text-xs">Market</label><select id="rec-market" class="w-full p-2 border rounded"></select></div>
-      <div><label class="text-xs">Commodity</label><input id="rec-commodity" type="text" class="w-full p-2 border rounded" placeholder="e.g. Beans" required></div>
-      <div><label class="text-xs">Variety</label><input id="rec-variety" type="text" class="w-full p-2 border rounded" placeholder="e.g. Beans (Whole)"></div>
-      <div><label class="text-xs">Category</label><input id="rec-category" type="text" class="w-full p-2 border rounded" placeholder="e.g. Vegetable"></div>
-      <div><label class="text-xs">District</label><input id="rec-district" type="text" class="w-full p-2 border rounded" placeholder="optional"></div>
-      <div><label class="text-xs">Modal Price (₹/kg)</label><input id="rec-modal" type="number" step="0.01" class="w-full p-2 border rounded"></div>
-      <div><label class="text-xs">Min Price (₹/kg)</label><input id="rec-min" type="number" step="0.01" class="w-full p-2 border rounded"></div>
-      <div><label class="text-xs">Max Price (₹/kg)</label><input id="rec-max" type="number" step="0.01" class="w-full p-2 border rounded"></div>
-
-      <div class="md:col-span-2 flex gap-2 mt-2">
-        <button type="submit" class="flex-1 bg-emerald-600 text-white py-2 rounded">Save</button>
-        <button id="delete-record-btn" type="button" class="flex-1 bg-red-50 text-red-600 py-2 rounded hidden">Delete</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Manage Markets Modal -->
+<!-- Manage Markets modal -->
 <div id="modal-manage-markets" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
   <div class="bg-white w-full max-w-xl rounded p-4">
     <div class="flex justify-between items-center mb-3">
@@ -255,7 +229,7 @@
   </div>
 </div>
 
-<!-- Recommendations Modal -->
+<!-- Recommendations modal -->
 <div id="modal-recommendations" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
   <div class="bg-white w-full max-w-4xl rounded p-4">
     <div class="flex justify-between items-center mb-3">
@@ -267,158 +241,514 @@
 </div>
 
 <script>
-/* ========== Persistence with localStorage fallback to IndexedDB ========== */
-
+/* ========================= Config & State ========================= */
 const STORAGE_KEY = 'agri_dashboard_store_v1';
 const IDB_DBNAME = 'agri_analyst_db_v1';
 const IDB_STORE = 'store';
+const RAW_DATA_URL = 'https://raw.githubusercontent.com/chetankdrmz-max/Appuge/main/data/Raw_Concatenated.xlsx';
+const OPEN_METEO_BASE = 'https://api.open-meteo.com/v1/forecast';
 
-/* --- IndexedDB helper --- */
+let commodityRows = [];
+let markets = [];
+let filteredData = [];
+let currentCommodity = '';
+let currentVariety = 'All';
+let priceChart=null, distributionChart=null, forecastChart=null;
+
+/* ========== Grow Guides ========== */
+/* Short guide used earlier; extended guides include more steps and region notes */
+const growGuides = {
+  "Apple": "Site: well-drained loamy soil. Plant: grafted saplings, spacing 4–6m. Care: pruning, irrigation during fruit set. Nutrition: NPK + micronutrients. Pest control as needed.",
+  "Beans": "Soil fertile & drained. Sow after frost, seed depth 2–3 cm. Support for pole beans. Harvest pods before seeds bulge.",
+  "Arhar (Tur/Red Gram)(Whole)": "Sow at start of rainy season. Spacing 30–45 cm. Use Rhizobium inoculant. Harvest when pods dry.",
+  "Ashgourd": "Loamy soil, transplant seedlings. Provide trellis. Even moisture and good organic matter.",
+  "Water Melon": "Sandy loam, warm. Plant in ridges. Frequent watering early; reduce near harvest for sweetness.",
+  "Onion": "Well-drained fertile soil. Plant sets or transplants. Regular watering; reduce nitrogen near maturity.",
+  "Potato": "Loose soil, plant seed pieces in ridges. Hill up soil around stems. Harvest when foliage dies back.",
+  "Tomato": "Disease-resistant seedlings. Support plants. Consistent moisture to avoid blossom end rot.",
+  "Brinjal": "Warm soil, spacing 60–90 cm. Feed potash during fruiting, harvest regularly.",
+  "Carrot": "Deep stone-free soil. Sow thinly, keep moist for germination. Harvest at desired size; rotate crops."
+};
+
+/* Extended, region-specific guides (editable) */
+const growGuidesExtended = {
+  "Apple": {
+    default: `Soil & Site: deep, well-drained loamy soil; pH 6.0–7.0.
+Planting: use certified grafted saplings; spacing 4–6 m; plant in pits with compost.
+Irrigation: drip irrigation recommended; keep soil moist during fruit set.
+Nutrition: apply N-P-K with micronutrients; adjust based on soil test.
+Pests/Diseases: watch codling moth, scab; implement integrated pest management.
+Harvest & Post-harvest: harvest when firm; cool storage recommended.`,
+    "Karnataka": `Varieties: Shimla/ Kasmir types do well in high altitude pockets.
+Irrigation: reduce watering during bagging/fruit maturity to avoid cracking.`
+  },
+  "Beans": {
+    default: `Soil: loamy, fertile with good drainage. Prepare seedbed; incorporate compost.
+Sowing: sow 2–3 cm deep; rows 45–60 cm apart for bush varieties.
+Support & Training: provide poles for climbing types; harvest regularly.
+Nutrition: moderate nitrogen, balanced K and P; use biofertilizers.
+Disease control: rotate with non-legume crops; watch for mosaic virus.`,
+    "DefaultRegionNote": `For hot lowlands, choose heat-tolerant varieties and plant in cooler months.`
+  },
+  "Water Melon": {
+    default: `Land prep: sandy loam is ideal, prepare ridges.
+Planting: 2–3 m spacing between hills.
+Watering: frequent early, reduce near harvest.
+Nutrition: good potash for sweetness; compost before planting.
+Pests: watch for fruit fly; cover fruit with bags if needed.`,
+  },
+  // Add more extended guides for other crops as needed...
+};
+
+/* Helper to get extended guide for crop+market */
+function getExtendedGuide(crop, marketName='') {
+  const e = growGuidesExtended[crop];
+  if (!e) return (growGuides[crop] || 'Short guide not available.');
+  // if there is a market-specific message, include it
+  const marketNote = (marketName && e[marketName]) ? e[marketName] : '';
+  return (e.default || '') + (marketNote ? ("\n\nRegion note: " + marketNote) : '');
+}
+
+/* Youtube search helper */
+function youtubeSearchUrlForCrop(crop) {
+  return 'https://www.youtube.com/results?search_query=' + encodeURIComponent(crop + ' how to grow');
+}
+
+/* ========================= IndexedDB helpers ========================= */
 function openIDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(IDB_DBNAME, 1);
-    req.onupgradeneeded = evt => {
-      const db = evt.target.result;
-      if (!db.objectStoreNames.contains(IDB_STORE)) {
-        db.createObjectStore(IDB_STORE);
-      }
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+  return new Promise((resolve,reject)=>{
+    const req = indexedDB.open(IDB_DBNAME,1);
+    req.onupgradeneeded = e => { const db = e.target.result; if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE); };
+    req.onsuccess = ()=>resolve(req.result);
+    req.onerror = ()=>reject(req.error);
   });
 }
+async function idbPut(k,v){ const db=await openIDB(); return new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).put(v,k); tx.oncomplete=()=>res(true); tx.onerror=()=>rej(tx.error); }); }
+async function idbGet(k){ const db=await openIDB(); return new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readonly'); const r=tx.objectStore(IDB_STORE).get(k); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+async function idbDelete(k){ const db=await openIDB(); return new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readwrite'); const r=tx.objectStore(IDB_STORE).delete(k); tx.oncomplete=()=>res(true); tx.onerror=()=>rej(tx.error); }); }
 
-async function idbPut(key, value) {
-  const db = await openIDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(IDB_STORE, 'readwrite');
-    tx.objectStore(IDB_STORE).put(value, key);
-    tx.oncomplete = () => resolve(true);
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-async function idbGet(key) {
-  const db = await openIDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(IDB_STORE, 'readonly');
-    const req = tx.objectStore(IDB_STORE).get(key);
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-
-async function idbDelete(key) {
-  const db = await openIDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(IDB_STORE, 'readwrite');
-    const req = tx.objectStore(IDB_STORE).delete(key);
-    tx.oncomplete = () => resolve(true);
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-/* --- saveToLocal: tries localStorage, falls back to IndexedDB --- */
+/* ========================= Persistence ========================= */
 async function saveToLocal() {
   const storeObj = { rows: commodityRows || [], markets: markets || [] };
   try {
-    // try localStorage first (fast)
-    const json = JSON.stringify(storeObj);
-    localStorage.setItem(STORAGE_KEY, json);
-    // clear any legacy IDB entry (optional)
-    try { await idbDelete(STORAGE_KEY); } catch(e){/* ignore */ }
-    console.log('Saved to localStorage (small).');
-    return { method: 'localStorage' };
-  } catch (err) {
-    console.warn('localStorage save failed, falling back to IndexedDB:', err);
-    try {
-      await idbPut(STORAGE_KEY, storeObj);
-      console.log('Saved to IndexedDB.');
-      // Inform user (friendly alert)
-      alert('Note: Data is large and was saved to your browser storage (IndexedDB) instead of localStorage. This supports larger datasets.');
-      return { method: 'indexedDB' };
-    } catch (idbErr) {
-      console.error('Failed to save to IndexedDB:', idbErr);
-      alert('Failed to save data to browser storage. Try exporting smaller CSV or clear space in browser storage.');
-      throw idbErr;
-    }
-  }
-}
-
-/* --- loadFromLocal: tries localStorage then IndexedDB --- */
-function loadFromLocal() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      commodityRows = parsed.rows || [];
-      markets = parsed.markets || [];
-      console.log('Loaded data from localStorage.');
-      return true;
-    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(storeObj));
+    try { await idbDelete(STORAGE_KEY); } catch(e){}
+    updateBadge('localStorage'); return { method: 'localStorage' };
   } catch (e) {
-    console.warn('Error reading localStorage, will try IndexedDB:', e);
+    try { await idbPut(STORAGE_KEY, storeObj); updateBadge('indexedDB'); alert('Saved to IndexedDB due to large data'); return { method:'indexedDB' }; }
+    catch (err) { alert('Save failed. Export and try again.'); throw err; }
   }
-
-  // fallback to IndexedDB (async) — return boolean but start async load
-  // We'll return true if IDB has data synchronously? can't; use a blocking async approach:
-  // Implement synchronous wrapper by using async/await above call sites OR make a blocking Promise here.
-  // Simpler: perform synchronous false and initialize async load (then refresh UI when done).
-  idbGet(STORAGE_KEY).then(storeObj => {
-    if (storeObj) {
-      commodityRows = storeObj.rows || [];
-      markets = storeObj.markets || [];
-      console.log('Loaded data from IndexedDB.');
-      refreshAllUI();
-    } else {
-      console.log('No data in IndexedDB.');
-    }
-  }).catch(err => {
-    console.warn('Error reading IndexedDB:', err);
-  });
-
-  // indicate whether localStorage had data (we already tried above)
-  return !!localStorage.getItem(STORAGE_KEY);
 }
-
-/* --- clearLocal: clears both storage places --- */
-function clearLocal() {
-  if (!confirm('Clear all saved data from this browser? This cannot be undone.')) return;
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-  } catch (e) { console.warn(e); }
-  idbDelete(STORAGE_KEY).then(() => {
-    commodityRows = [];
-    markets = [];
-    refreshAllUI();
-    alert('Local save cleared from browser storage.');
-  }).catch(err => {
-    console.warn('Clear IndexedDB failed:', err);
-    commodityRows = [];
-    markets = [];
-    refreshAllUI();
-    alert('Local save cleared (localStorage). IndexedDB clear may have failed; check console.');
-  });
-}
-
-/* --- helper: attempt to migrate large localStorage to IndexedDB (optional) --- */
-async function migrateLocalStorageToIDBIfLarge() {
+function loadFromLocalSync() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
-    // if the localStorage string length is large (> 1MB), move to IDB
-    if (raw.length > 500000) {
-      const parsed = JSON.parse(raw);
-      await idbPut(STORAGE_KEY, parsed);
-      // optionally remove from localStorage to free quota
-      localStorage.removeItem(STORAGE_KEY);
-      console.log('Migrated large localStorage data to IndexedDB and cleared localStorage.');
-    }
-  } catch (e) { console.warn('Migration check failed:', e); }
+    if (raw) { const p = JSON.parse(raw); commodityRows = p.rows || []; markets = p.markets || []; updateBadge('localStorage'); return true; }
+  } catch(e){}
+  return false;
+}
+function loadFromLocalAsyncThenInit() {
+  idbGet(STORAGE_KEY).then(s => {
+    if (s) {
+      commodityRows = s.rows || [];
+      markets = s.markets || [];
+      updateBadge('indexedDB');
+      refreshAllUI();
+    } else updateBadge('none');
+  }).catch(()=>updateBadge('none'));
+}
+async function clearLocal() {
+  if (!confirm('Clear saved data?')) return;
+  try { localStorage.removeItem(STORAGE_KEY); } catch(e){}
+  try { await idbDelete(STORAGE_KEY); } catch(e){}
+  commodityRows=[]; markets=[]; updateBadge('none'); refreshAllUI(); alert('Cleared local save.');
+}
+function updateBadge(kind) {
+  const el = document.getElementById('storage-badge'); if (!el) return;
+  el.textContent = kind === 'localStorage' ? '🟢 Saved in localStorage' : kind === 'indexedDB' ? '🔵 Saved in IndexedDB' : '⚪ No saved data';
 }
 
-/* Call migration on startup (non-blocking) */
-migrateLocalStorageToIDBIfLarge().catch(()=>{/*ignore*/});
+/* ========================= Parsers ========================= */
+function parseCSVFallback(text, { delimiter = ',', header = true } = {}) {
+  const rows=[]; let cur='', row=[], inQuotes=false;
+  for (let i=0;i<text.length;i++){ const ch=text[i], next=text[i+1];
+    if (ch==='\"'){ if (inQuotes && next==='\"'){ cur+='"'; i++; } else inQuotes=!inQuotes; continue; }
+    if (ch===delimiter && !inQuotes){ row.push(cur); cur=''; continue; }
+    if ((ch==='\n'||ch==='\r') && !inQuotes){ if (ch==='\r' && next==='\n') i++; row.push(cur); rows.push(row); row=[]; cur=''; continue; }
+    cur+=ch;
+  }
+  if (cur!==''||row.length>0){ row.push(cur); rows.push(row); }
+  if (!header) return rows;
+  const headers = rows.shift().map(h=>h.trim());
+  return rows.map(r=>{ const o={}; for(let i=0;i<headers.length;i++) o[headers[i]] = r[i]!==undefined?r[i]:''; return o; });
+}
+async function fetchAndParseURL(url) {
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error('Fetch failed: ' + resp.status);
+  const ct = (resp.headers.get('content-type')||'').toLowerCase();
+  if (ct.includes('text') || url.toLowerCase().endsWith('.csv')) {
+    const text = await resp.text();
+    return (typeof Papa !== 'undefined') ? Papa.parse(text,{header:true,skipEmptyLines:true}).data : parseCSVFallback(text,{header:true});
+  } else {
+    const ab = await resp.arrayBuffer();
+    const wb = XLSX.read(new Uint8Array(ab), { type:'array' });
+    const sheet = wb.SheetNames[0];
+    return XLSX.utils.sheet_to_json(wb.Sheets[sheet], { defval:'' });
+  }
+}
+function normalizeParsedRows(rows) {
+  return rows.map(r => {
+    const dateStr = r.Date || r.date || r['DATE'] || '';
+    const commodityName = String(r.Commodity || r.commodity || r['Commodity'] || '').trim();
+    return {
+      date: new Date(dateStr),
+      market: r.Market || r.market || '',
+      commodity: commodityName,
+      variety: String(r.Variety || r.variety || r['Variety'] || '').trim(),
+      category: String(r.Category || r.category || r['Category'] || '').trim() || 'Other',
+      minPriceKg: parseFloat(r.Min_Price_Kg || r['Min_Price_Kg'] || r.Min_Price || 0) || 0,
+      maxPriceKg: parseFloat(r.Max_Price_Kg || r['Max_Price_Kg'] || r.Max_Price || 0) || 0,
+      modalPriceKg: parseFloat(r.Modal_Price_Kg || r['Modal_Price_Kg'] || r.Modal_Price || 0) || 0,
+      district: r.District || ''
+    };
+  }).filter(it => !isNaN(it.date.getTime()) && it.commodity);
+}
+
+/* ========================= App startup & init ========================= */
+async function preloadDataAndStart() {
+  try {
+    const parsed = await fetchAndParseURL(RAW_DATA_URL);
+    commodityRows = normalizeParsedRows(parsed);
+    const uniqMarkets = [...new Set(commodityRows.map(r => r.market || 'Default'))];
+    markets = uniqMarkets.map(m => ({ name: m, lat: null, lon: null }));
+    await saveToLocal();
+    initializeDashboard();
+  } catch (err) {
+    console.warn('Preload failed:', err);
+    const hadLocal = loadFromLocalSync();
+    if (hadLocal) initializeDashboard();
+    else { loadFromLocalAsyncThenInit(); document.getElementById('start-screen').classList.remove('hidden'); }
+  }
+}
+function initializeDashboard() {
+  document.getElementById('start-screen').classList.add('hidden');
+  document.getElementById('main-dashboard').classList.remove('hidden');
+  setupEventListeners();
+  populateMarketSelect(); populateCategoryFilter(); populateCommodityList(); setDefaultDateRange(); applyFilters();
+}
+
+/* ========================= UI events ========================= */
+function setupEventListeners() {
+  document.getElementById('start-analysis-btn').addEventListener('click', preloadDataAndStart);
+  document.getElementById('load-local-btn').addEventListener('click', ()=>{ const ok = loadFromLocalSync(); if (!ok) loadFromLocalAsyncThenInit(); initializeDashboard(); });
+  document.getElementById('file-input').addEventListener('change', handleFileImport);
+  document.getElementById('import-csv-btn').addEventListener('click', ()=>document.getElementById('file-input').click());
+  document.getElementById('export-all-btn').addEventListener('click', exportAllCSV);
+  document.getElementById('clear-storage-btn').addEventListener('click', clearLocal);
+  document.getElementById('apply-filters').addEventListener('click', applyFilters);
+  document.getElementById('reset-filters').addEventListener('click', resetFilters);
+  document.getElementById('category-filter').addEventListener('change', populateCommodityList);
+  document.getElementById('variety-filter').addEventListener('change', applyFilters);
+  document.getElementById('market-select').addEventListener('change', ()=>{ applyFilters(); loadWeatherForSelectedMarket(); });
+  document.getElementById('tab-dashboard').addEventListener('click', ()=>switchTab('dashboard'));
+  document.getElementById('tab-prediction').addEventListener('click', ()=>switchTab('prediction'));
+  document.getElementById('tab-top-crops').addEventListener('click', ()=>{ switchTab('top-crops'); generateTopCropsAnalysis(); });
+
+  document.getElementById('manage-markets-btn').addEventListener('click', openManageMarkets);
+  document.getElementById('close-manage-markets').addEventListener('click', closeManageMarkets);
+  document.getElementById('add-market-btn').addEventListener('click', addMarketFromModal);
+
+  document.getElementById('get-recommendations').addEventListener('click', ()=>{ generateRecommendations(true); openRecommendationsModal(); });
+  document.getElementById('close-recommendations-modal').addEventListener('click', closeRecommendationsModal);
+}
+
+/* ========================= Lists & filters ========================= */
+function populateMarketSelect() {
+  const sel = document.getElementById('market-select');
+  sel.innerHTML = '';
+  (markets.length ? markets : [{ name: 'Default', lat: null, lon: null }]).forEach(m => {
+    const opt = document.createElement('option'); opt.value = m.name; opt.textContent = m.name; sel.appendChild(opt);
+  });
+}
+function populateCategoryFilter() {
+  const cats = [...new Set((commodityRows || []).map(r => r.category || 'Other'))].sort();
+  const sel = document.getElementById('category-filter'); sel.innerHTML = '<option value="All">All</option>';
+  cats.forEach(c => { const o = document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
+}
+function populateCommodityList() {
+  const selectedCategory = document.getElementById('category-filter').value;
+  const list = document.getElementById('commodity-list');
+  const commodities = [...new Set((commodityRows || []).filter(r=> selectedCategory==='All' || r.category===selectedCategory).map(r=>r.commodity))].sort();
+  list.innerHTML = '';
+  commodities.forEach((c, idx) => {
+    const btn = document.createElement('button'); btn.className='w-full text-left p-2 text-sm hover:bg-slate-50 sidebar-item flex items-center';
+    // icon
+    const img = document.createElement('img');
+    img.className='crop-icon';
+    const slug = c.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'');
+    img.src = `icons/${slug}.png`;
+    img.onerror = () => { img.remove(); const emoji = document.createElement('span'); emoji.textContent = '🌾'; emoji.style.marginRight='8px'; btn.prepend(emoji); };
+    btn.prepend(img);
+    btn.appendChild(document.createTextNode(c));
+    btn.addEventListener('click', ()=>{ currentCommodity=c; document.querySelectorAll('.sidebar-item').forEach(el=>el.classList.remove('active')); btn.classList.add('active'); populateVarietyFilter(); applyFilters(); });
+    list.appendChild(btn);
+    if (idx===0 && !currentCommodity){ currentCommodity = c; btn.classList.add('active'); }
+  });
+  populateVarietyFilter();
+}
+function populateVarietyFilter() {
+  const varieties = [...new Set((commodityRows || []).filter(r=>r.commodity===currentCommodity).map(r=>r.variety))].sort();
+  const sel = document.getElementById('variety-filter'); sel.innerHTML = '<option value="All">All</option>';
+  varieties.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o); });
+}
+
+/* ========================= Date range, apply/reset ========================= */
+function setDefaultDateRange() {
+  if (!commodityRows.length) return;
+  const dates = commodityRows.map(r=>r.date.getTime()); const min=new Date(Math.min(...dates)); const max=new Date(Math.max(...dates));
+  const sd = new Date(max); sd.setMonth(sd.getMonth()-6);
+  document.getElementById('start-date').value = (sd < min ? min : sd).toISOString().split('T')[0];
+  document.getElementById('end-date').value = max.toISOString().split('T')[0];
+}
+function applyFilters() {
+  if (!currentCommodity) return updateDashboardUI();
+  const start = new Date(document.getElementById('start-date').value); const end = new Date(document.getElementById('end-date').value);
+  const market = document.getElementById('market-select').value; currentVariety = document.getElementById('variety-filter').value;
+  filteredData = (commodityRows || []).filter(r => r.commodity===currentCommodity && (currentVariety==='All' || r.variety===currentVariety) && r.date>=start && r.date<=end && (market ? r.market===market : true)).sort((a,b)=>a.date-b.date);
+  updateDashboardUI(); loadWeatherForSelectedMarket();
+}
+function resetFilters(){ document.getElementById('category-filter').value='All'; populateCommodityList(); setDefaultDateRange(); applyFilters(); }
+
+/* ========================= Update UI: snapshot, cards, charts, table ========================= */
+function updateDashboardUI(){
+  document.getElementById('main-header').textContent = currentCommodity ? `${currentCommodity} Dashboard` : 'Dashboard';
+  updateSnapshotTable(); updateSummaryCards(); updatePriceChart(); updateDistributionChart(); updateDataTable();
+}
+function updateSnapshotTable(){
+  const tbody=document.getElementById('snapshot-table-body'); tbody.innerHTML='';
+  if (!commodityRows.length) { document.getElementById('snapshot-count').textContent='0'; return; }
+  const latestDate = new Date(Math.max(...commodityRows.map(r=>r.date.getTime())));
+  const latestISO = latestDate.toISOString().split('T')[0]; document.getElementById('snapshot-date').textContent=`(${latestDate.toLocaleDateString('en-GB')})`;
+  const snapshot = commodityRows.filter(r=> r.date.toISOString().split('T')[0]===latestISO);
+  document.getElementById('snapshot-count').textContent = snapshot.length;
+  snapshot.forEach(it=>{ const tr=document.createElement('tr'); tr.className='border-b'; tr.innerHTML=`<td class="p-2">${it.market}</td><td class="p-2 font-medium">${it.commodity}</td><td class="p-2">${it.variety}</td><td class="p-2 font-bold">₹${it.modalPriceKg.toFixed(2)}</td><td class="p-2">₹${it.minPriceKg.toFixed(2)}</td><td class="p-2">₹${it.maxPriceKg.toFixed(2)}</td>`; tbody.appendChild(tr); });
+}
+function updateSummaryCards(){
+  const container=document.getElementById('summary-cards');
+  if (!filteredData || filteredData.length===0) { container.innerHTML='<div class="col-span-full bg-white p-6 rounded shadow text-center">No data for selection</div>'; return; }
+  const latest=filteredData[filteredData.length-1]; const prices=filteredData.map(d=>d.modalPriceKg);
+  const avg = prices.reduce((a,b)=>a+b,0)/prices.length; const min=Math.min(...prices), max=Math.max(...prices);
+  const prev = filteredData.length>1 ? filteredData[filteredData.length-2] : latest; const change = prev.modalPriceKg ? ((latest.modalPriceKg-prev.modalPriceKg)/prev.modalPriceKg)*100 : 0;
+  container.innerHTML = `
+    <div class="bg-white p-4 rounded shadow"><div class="text-sm text-slate-500">Latest Price</div><div class="text-2xl font-bold">₹${latest.modalPriceKg.toFixed(2)}</div><div class="${change>=0?'text-green-500':'text-red-500'} text-sm">${change>=0?'+':''}${change.toFixed(2)}%</div></div>
+    <div class="bg-white p-4 rounded shadow"><div class="text-sm text-slate-500">Average</div><div class="text-2xl font-bold">₹${avg.toFixed(2)}</div></div>
+    <div class="bg-white p-4 rounded shadow"><div class="text-sm text-slate-500">Min</div><div class="text-2xl font-bold">₹${min.toFixed(2)}</div></div>
+    <div class="bg-white p-4 rounded shadow"><div class="text-sm text-slate-500">Max</div><div class="text-2xl font-bold">₹${max.toFixed(2)}</div></div>
+  `;
+}
+function updatePriceChart(){
+  const ctx=document.getElementById('price-chart').getContext('2d'); if (priceChart) priceChart.destroy(); if (!filteredData||filteredData.length===0) return;
+  priceChart = new Chart(ctx, { type:'line', data:{ datasets:[{ label:'Modal Price', data:filteredData, parsing:{ xAxisKey:'date', yAxisKey:'modalPriceKg' }, borderColor:'rgb(34,197,94)', tension:0.1, pointRadius:0 }] }, options:{ responsive:true, maintainAspectRatio:false, scales:{ x:{ type:'time', time:{ unit:'month' } }, y:{ beginAtZero:false } } } });
+}
+function updateDistributionChart(){
+  const ctx=document.getElementById('distribution-chart').getContext('2d'); if (distributionChart) distributionChart.destroy(); if (!filteredData||filteredData.length===0) return;
+  const values = filteredData.map(d=>d.modalPriceKg); const min=Math.min(...values), max=Math.max(...values); if (min===max) return;
+  const bins=8; const binSize=(max-min)/bins; const counts=Array(bins).fill(0);
+  values.forEach(v=>{ const i=Math.min(Math.floor((v-min)/binSize),bins-1); counts[i]++; });
+  const labels = counts.map((_,i)=>`₹${Math.round(min+i*binSize)}-₹${Math.round(min+(i+1)*binSize)}`);
+  distributionChart = new Chart(ctx, { type:'bar', data:{ labels, datasets:[{ label:'Frequency', data:counts }] }, options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true } } } });
+}
+function updateDataTable(){ const tbody=document.getElementById('price-table-body'); tbody.innerHTML=''; const rows=(filteredData||[]).slice(-20).reverse(); if (!rows.length){ tbody.innerHTML='<tr><td colspan="7" class="p-4 text-center text-slate-500">No rows</td></tr>'; return; } rows.forEach(r=>{ const tr=document.createElement('tr'); tr.className='border-b'; tr.innerHTML=`<td class="p-2">${r.date.toLocaleDateString()}</td><td class="p-2">${r.market}</td><td class="p-2">${r.commodity}</td><td class="p-2">${r.variety}</td><td class="p-2 font-bold">₹${r.modalPriceKg.toFixed(2)}</td><td class="p-2">₹${r.minPriceKg.toFixed(2)}</td><td class="p-2">₹${r.maxPriceKg.toFixed(2)}</td>`; tbody.appendChild(tr); }); }
+
+/* ========================= Import / Export ========================= */
+function exportAllCSV(){
+  const rows = commodityRows.map(r=>({ Date:r.date.toISOString().split('T')[0], Market:r.market, Commodity:r.commodity, Variety:r.variety, Category:r.category, Min_Price_Kg:r.minPriceKg, Max_Price_Kg:r.maxPriceKg, Modal_Price_Kg:r.modalPriceKg, District:r.district }));
+  if (!rows.length){ alert('No rows to export'); return; }
+  const headers = Object.keys(rows[0]); const csv = [headers.join(',')].concat(rows.map(row => headers.map(h => `"${(row[h]||'').toString().replace(/"/g,'""')}"`).join(','))).join('\n');
+  const link=document.createElement('a'); link.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); link.download=`smartfarmher_all_${new Date().toISOString().split('T')[0]}.csv`; document.body.appendChild(link); link.click(); link.remove();
+}
+async function handleFileImport(evt){
+  const file = (evt.target && evt.target.files && evt.target.files[0]) || null; if (!file) return;
+  const name=file.name.toLowerCase();
+  try {
+    let norm=[];
+    if (name.endsWith('.csv')||file.type.includes('text')) {
+      const txt = await file.text();
+      const parsed = (typeof Papa !== 'undefined') ? Papa.parse(txt,{header:true,skipEmptyLines:true}).data : parseCSVFallback(txt,{header:true});
+      norm = normalizeParsedRows(parsed);
+    } else {
+      const ab = await file.arrayBuffer(); const wb = XLSX.read(new Uint8Array(ab), { type:'array' }); const sheet = wb.SheetNames[0];
+      const parsed = XLSX.utils.sheet_to_json(wb.Sheets[sheet], { defval:'' }); norm = normalizeParsedRows(parsed);
+    }
+    commodityRows = commodityRows.concat(norm).sort((a,b)=>a.date-b.date);
+    const uniqMarkets = [...new Set(commodityRows.map(r=>r.market||'Default'))];
+    markets = uniqMarkets.map(m=>{ const ex=markets.find(x=>x.name===m); return ex||{name:m,lat:null,lon:null}; });
+    await saveToLocal(); populateCategoryFilter(); populateCommodityList(); setDefaultDateRange(); applyFilters(); alert('Imported: ' + file.name);
+  } catch (err){ console.error('Import failed', err); alert('Import failed: '+err.message); } finally { const fi=document.getElementById('file-input'); if (fi) fi.value=''; }
+}
+
+/* ========================= Weather (Open-Meteo) ========================= */
+async function loadWeatherForSelectedMarket(){
+  const sel=document.getElementById('market-select'); if (!sel) return;
+  const mName = sel.value; const m = markets.find(x=>x.name===mName); const container=document.getElementById('weather-container'); container.innerHTML='';
+  if (!m || !m.lat || !m.lon) { container.innerHTML = `<div class="text-xs text-slate-500">No coordinates for this market. Add lat/lon in Manage Markets.</div>`; return; }
+  try {
+    const url = `${OPEN_METEO_BASE}?latitude=${encodeURIComponent(m.lat)}&longitude=${encodeURIComponent(m.lon)}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto&forecast_days=7`;
+    const resp = await fetch(url); if (!resp.ok) throw new Error('Weather fetch failed');
+    const json = await resp.json(); const days = json.daily.time || [];
+    container.innerHTML=''; for (let i=0;i<days.length;i++){ const day = days[i]; const tmax=json.daily.temperature_2m_max[i]; const tmin=json.daily.temperature_2m_min[i]; const prec=json.daily.precipitation_sum[i];
+      const div=document.createElement('div'); div.className='flex justify-between items-center border-b py-2'; div.innerHTML=`<div><div class="font-medium">${new Date(day).toLocaleDateString()}</div><div class="text-xs text-slate-500">Min ${tmin}°C • Max ${tmax}°C</div></div><div class="text-sm">${prec} mm</div>`; container.appendChild(div);
+    }
+  } catch(e){ console.warn('Weather error', e); container.innerHTML = `<div class="text-xs text-red-500">Weather fetch failed. Check network or coordinates.</div>`; }
+}
+
+/* ========================= Forecast ========================= */
+function generatePredictionAnalysis(){
+  if (!commodityRows.length || !currentCommodity) { document.getElementById('prediction-outlook').innerHTML = `<div class="p-4 bg-white rounded">Not enough data for forecast.</div>`; return; }
+  const all = commodityRows.filter(d=>d.commodity===currentCommodity).sort((a,b)=>a.date-b.date);
+  if (all.length < 30) { document.getElementById('prediction-outlook').innerHTML = `<div class="p-4 bg-white rounded">Not enough historical data (min 30 rows).</div>`; }
+  const last90 = all.slice(-90); const trend = (last90[last90.length-1].modalPriceKg - last90[0].modalPriceKg) / Math.max(1,last90.length);
+  const monthly = Array(12).fill(0).map(()=>({sum:0,count:0})); all.forEach(d=>{ const m=d.date.getMonth(); monthly[m].sum+=d.modalPriceKg; monthly[m].count++;});
+  const season = monthly.map(m=> m.count? m.sum/m.count : 0); const avgSeason = season.reduce((a,b)=>a+b,0)/12||1;
+  const forecastData=[]; const lastDate=all[all.length-1].date; let lastPrice=all[all.length-1].modalPriceKg;
+  for (let i=1;i<=90;i++){ const nd=new Date(lastDate); nd.setDate(lastDate.getDate()+i); const sf = season[nd.getMonth()] || avgSeason; lastPrice += trend; const forecasted = lastPrice * (sf / (avgSeason||1)); forecastData.push({ date: nd, modalPriceKg: forecasted }); }
+  const ctx = document.getElementById('forecast-chart').getContext('2d'); if (forecastChart) forecastChart.destroy();
+  forecastChart = new Chart(ctx, { type:'line', data:{ datasets:[
+    { label:'Historical', data: all.slice(-365), parsing:{ xAxisKey:'date', yAxisKey:'modalPriceKg' }, borderColor:'rgb(34,197,94)', pointRadius:0 },
+    { label:'Forecast (90d)', data: forecastData, parsing:{ xAxisKey:'date', yAxisKey:'modalPriceKg' }, borderColor:'rgb(255,99,132)', borderDash:[5,5], pointRadius:0 }
+  ] }, options:{ responsive:true, maintainAspectRatio:false, scales:{ x:{ type:'time', time:{ unit:'month' } }, y:{ beginAtZero:false } } } });
+  const trendChange = forecastData[forecastData.length-1].modalPriceKg - forecastData[0].modalPriceKg; const currentPrice = all[all.length-1].modalPriceKg; const histAvg = all.reduce((s,d)=>s+d.modalPriceKg,0)/all.length;
+  let signal='Wait', color='yellow', reason='Market expected to be stable or unclear.';
+  if (trendChange>0 && currentPrice>histAvg){ signal='Grow Now'; color='green'; reason='Prices rising and above historical average.'; } else if (trendChange>0){ signal='Consider Growing'; color='green'; reason='Forecast positive trend.'; }
+  document.getElementById('prediction-outlook').innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div class="p-4 rounded bg-${color}-50 border"><div class="text-xs font-bold uppercase">Strategic Signal</div><div class="text-2xl font-extrabold mt-2">${signal}</div><div class="text-sm text-slate-600 mt-2">${reason}</div></div><div class="p-4 rounded bg-slate-50 border"><div class="text-xs font-bold uppercase">Forecast Summary</div><div class="text-lg font-bold mt-2">Peak change: ₹${(trendChange).toFixed(2)}</div><div class="text-sm text-slate-600 mt-2">Current: ₹${currentPrice.toFixed(2)} • Historical avg: ₹${histAvg.toFixed(2)}</div></div></div>`; 
+}
+
+/* ========================= Recommendations & Top Crops ========================= */
+function generateRecommendations(showModal=true){
+  const commodities = [...new Set(commodityRows.map(r=>r.commodity))];
+  const recs = commodities.map(c=>{
+    const rows = commodityRows.filter(r=>r.commodity===c).sort((a,b)=>a.date-b.date);
+    const last30 = rows.slice(-30); if (last30.length<5) return null;
+    const prices = last30.map(r=>r.modalPriceKg); const avg = prices.reduce((a,b)=>a+b,0)/prices.length;
+    const momentum = (prices[prices.length-1] - prices[0]) / Math.max(1, Math.abs(prices[0])); const variance = prices.reduce((s,p)=>s+Math.pow(p-avg,2),0)/prices.length;
+    const volatility = Math.sqrt(variance)/Math.max(0.0001,avg); const score = avg * (1 + momentum) / (volatility + 0.05);
+    return { commodity:c, avgPrice:avg, priceChangePercent:momentum*100, volatility, score };
+  }).filter(Boolean).sort((a,b)=>b.score - a.score);
+
+  if (showModal){
+    const modal = document.getElementById('recommendations-list');
+    modal.innerHTML = recs.slice(0,3).map((r,idx)=>{
+      const guide = growGuides[r.commodity] || 'Short guide not available. Check related videos.';
+      const yt = youtubeSearchUrlForCrop(r.commodity);
+      return `<div class="p-4 border rounded">
+        <div class="flex justify-between items-start"><div><strong>${idx+1}. ${r.commodity}</strong><div class="text-xs text-slate-500">Score ${r.score.toFixed(2)}</div></div><div class="text-xs text-slate-500">${r.priceChangePercent>=0?'+':''}${r.priceChangePercent.toFixed(1)}%</div></div>
+        <div class="mt-2 text-sm text-slate-700">${guide}</div>
+        <div class="mt-3 flex gap-2">
+          <a class="video-link" target="_blank" rel="noopener" href="${yt}">YouTube videos →</a>
+          <button class="bg-blue-500 text-white text-xs px-3 py-1 rounded" onclick="printGrowSheet(${JSON.stringify(r.commodity)}, ${JSON.stringify(guide)}, ${JSON.stringify(yt)})">Print Grow Sheet</button>
+          <button class="bg-slate-800 text-white text-xs px-3 py-1 rounded" onclick="downloadGrowPdf(${JSON.stringify(r.commodity)})">Download PDF</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  return recs;
+}
+
+function generateTopCropsAnalysis(){
+  const recs = generateRecommendations(false).slice(0,10);
+  const container = document.getElementById('top-crops-container');
+  if (!recs || recs.length===0){ container.innerHTML = `<div class="p-4 bg-white rounded">No data to rank crops.</div>`; return; }
+  container.innerHTML = recs.map((r,idx)=>{
+    const guide = growGuides[r.commodity] || 'Short guide not available. Check related videos.';
+    const yt = youtubeSearchUrlForCrop(r.commodity);
+    return `<details class="bg-white p-3 rounded shadow"><summary class="flex items-center justify-between cursor-pointer"><div class="flex items-center"><img class="crop-icon" src="icons/${r.commodity.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'')}.png" onerror="this.remove();"><div><div class="text-lg font-bold">${idx+1}. ${r.commodity}</div><div class="text-xs text-slate-500">Score ${r.score.toFixed(2)}</div></div></div><div class="text-right"><div class="text-sm text-slate-500">Avg ₹${r.avgPrice.toFixed(2)}</div><div class="${r.priceChangePercent>=0?'text-green-500':'text-red-500'} font-semibold">${r.priceChangePercent>=0?'+':''}${r.priceChangePercent.toFixed(1)}%</div></div></summary><div class="mt-3 text-sm text-slate-700"><strong>How to grow (short):</strong><p class="mt-1">${guide}</p><div class="mt-2 flex gap-2"><a class="video-link" target="_blank" rel="noopener" href="${yt}">Related YouTube videos →</a><button class="bg-blue-500 text-white text-xs px-3 py-1 rounded" onclick="printGrowSheet(${JSON.stringify(r.commodity)}, ${JSON.stringify(getExtendedGuide(r.commodity, document.getElementById('market-select').value))}, ${JSON.stringify(youtubeSearchUrlForCrop(r.commodity))})">Print Grow Sheet</button><button class="bg-slate-800 text-white text-xs px-3 py-1 rounded" onclick="downloadGrowPdf(${JSON.stringify(r.commodity)})">Download PDF</button></div></div></details>`;
+  }).join('');
+}
+
+/* ========================= Print / PDF generation ========================= */
+/* Print version (opens a new window and triggers print) */
+function printGrowSheet(crop, guide, ytLink){
+  const win = window.open('', '_blank');
+  const safeCrop = String(crop).replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const safeGuide = String(guide).replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+  const safeYt = String(ytLink);
+  win.document.write(`
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Grow Sheet - ${safeCrop}</title>
+        <style>
+          body{font-family: Arial, Helvetica, sans-serif; margin:28px; color:#111;}
+          header{display:flex;align-items:center;justify-content:space-between;}
+          h1{color:#10b981;margin:0 0 8px 0;}
+          .section{margin-top:18px;}
+          .btn{display:inline-block;margin-top:12px;padding:8px 12px;background:#0366d6;color:#fff;text-decoration:none;border-radius:6px;}
+          .meta{font-size:13px;color:#555;margin-top:4px;}
+          @media print{ .btn{display:none;} header{page-break-after:avoid;} }
+        </style>
+      </head>
+      <body>
+        <header><div><h1>🌱 Grow Sheet: ${safeCrop}</h1><div class="meta">Generated by Smart FarmHer</div></div><div></div></header>
+        <div class="section"><h3>How to Grow (short)</h3><p>${safeGuide}</p></div>
+        <div class="section"><h3>Helpful Videos</h3><p><a class="btn" target="_blank" href="${safeYt}">Open YouTube search for "${safeCrop}"</a></p></div>
+        <script>window.print();</script>
+      </body>
+    </html>
+  `);
+  win.document.close();
+}
+
+/* PDF download using jsPDF (client-side). */
+async function downloadGrowPdf(crop) {
+  const market = document.getElementById('market-select').value || '';
+  const guideText = getExtendedGuide(crop, market);
+  const yt = youtubeSearchUrlForCrop(crop);
+  // create PDF
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const margin = 40;
+  let y = 50;
+  doc.setFontSize(20);
+  doc.setTextColor('#0ea5a3'); // emerald
+  doc.text(`Grow Sheet: ${crop}`, margin, y); y += 28;
+  doc.setFontSize(10);
+  doc.setTextColor('#444');
+  doc.text(`Generated by Smart FarmHer — ${new Date().toLocaleDateString()}`, margin, y); y += 18;
+  doc.setDrawColor('#eee'); doc.setLineWidth(0.5); doc.line(margin, y, 595-margin, y); y += 14;
+  // Guide (multi-line)
+  doc.setFontSize(12);
+  const split = doc.splitTextToSize(guideText, 595 - margin*2);
+  doc.text(split, margin, y); y += split.length * 14 + 8;
+  // YouTube link
+  doc.setTextColor('#1565c0'); doc.setFontSize(11);
+  doc.textWithLink('YouTube: ' + yt, margin, y, { url: yt });
+  // Footer
+  doc.setFontSize(9); doc.setTextColor('#777'); doc.text('Smart FarmHer — Grow Good • Sell Smart', margin, 780);
+  // Save
+  const filename = `GrowSheet_${crop.replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}.pdf`;
+  doc.save(filename);
+}
+
+/* ========================= Manage markets modal actions ========================= */
+function openManageMarkets(){ document.getElementById('modal-manage-markets').classList.remove('hidden'); renderMarketsTable(); }
+function closeManageMarkets(){ document.getElementById('modal-manage-markets').classList.add('hidden'); }
+function renderMarketsTable(){ const tbody=document.getElementById('markets-table-body'); tbody.innerHTML=''; markets.forEach((m,idx)=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td class="p-1">${m.name}</td><td class="p-1">${m.lat||''}</td><td class="p-1">${m.lon||''}</td><td class="p-1"><button data-idx="${idx}" class="del-market text-red-500 text-xs">Delete</button></td>`; tbody.appendChild(tr); }); tbody.querySelectorAll('.del-market').forEach(btn=>btn.addEventListener('click', async ()=>{ const idx=+btn.dataset.idx; markets.splice(idx,1); await saveToLocal(); populateMarketSelect(); renderMarketsTable(); })); }
+async function addMarketFromModal(){ const name=document.getElementById('market-name').value.trim(); const lat=parseFloat(document.getElementById('market-lat').value); const lon=parseFloat(document.getElementById('market-lon').value); if (!name){ alert('Enter market name'); return; } markets.push({ name, lat: isFinite(lat)?lat:null, lon: isFinite(lon)?lon:null }); document.getElementById('market-name').value=''; document.getElementById('market-lat').value=''; document.getElementById('market-lon').value=''; await saveToLocal(); populateMarketSelect(); renderMarketsTable(); }
+
+/* ========================= Recommendations modal helpers ========================= */
+function openRecommendationsModal(){ document.getElementById('modal-recommendations').classList.remove('hidden'); }
+function closeRecommendationsModal(){ document.getElementById('modal-recommendations').classList.add('hidden'); }
+
+/* ========================= Utilities & startup ========================= */
+function refreshAllUI(){ populateMarketSelect(); populateCategoryFilter(); populateCommodityList(); setDefaultDateRange(); applyFilters(); }
+function switchTab(tabName){ const tabs={'dashboard':'dashboard-content','prediction':'prediction-content','top-crops':'top-crops-content'}; Object.keys(tabs).forEach(k=>{ document.getElementById('tab-'+k).classList.toggle('tab-active', k===tabName); document.getElementById(tabs[k]).classList.toggle('hidden', k!==tabName); }); if(tabName==='prediction') generatePredictionAnalysis(); if(tabName==='top-crops') generateTopCropsAnalysis(); }
+
+async function migrateLocalStorageToIDBIfLarge(){ try{ const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return; if (raw.length > 500000) { const parsed = JSON.parse(raw); await idbPut(STORAGE_KEY, parsed); localStorage.removeItem(STORAGE_KEY); updateBadge('indexedDB'); } } catch(e){ console.warn('migration check failed', e); } }
+function tryAutoStart(){ migrateLocalStorageToIDBIfLarge().catch(()=>{}); const hadSync = loadFromLocalSync(); if (hadSync) { initializeDashboard(); return; } idbGet(STORAGE_KEY).then(store => { if (store && store.rows && store.rows.length) { commodityRows = store.rows; markets = store.markets || []; updateBadge('indexedDB'); initializeDashboard(); } else { preloadDataAndStart(); } }).catch(err => { console.warn('IDB read error', err); preloadDataAndStart(); }); }
+
+document.addEventListener('DOMContentLoaded', ()=>{ setupEventListeners(); tryAutoStart(); });
+
+/* Expose for debugging if needed */
+window._smartfarmher = { commodityRows, markets, saveToLocal, preloadDataAndStart };
 </script>
 
 </body>
