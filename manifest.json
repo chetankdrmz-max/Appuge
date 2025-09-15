@@ -1,24 +1,12 @@
 {
-  "name": "Smart FarmHer — Grow Good — Sell Smart",
-  "short_name": "Smart FarmHer",
-  "start_url": "/Smart_FarmHer/?source=pwa",
-  "scope": "/Smart_FarmHer/",
+  "name": "Smart FarmHer",
+  "short_name": "SmartFarmHer",
+  "start_url": "/Smart_FarmHer/",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#f0f2f5",
+  "background_color": "#f3f6f8",
   "theme_color": "#10b981",
   "icons": [
-    {
-      "src": "icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
   ]
 }
