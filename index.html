@@ -19,17 +19,30 @@
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-    :root{--emerald:#10b981;--muted:#6b7280;--card:#ffffff;--bg:#f3f6f8}
-    body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:var(--bg); color:#0f172a; margin:0; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;}
+    :root{
+      --emerald:#10b981;
+      --muted:#6b7280;
+      --card:#ffffff;
+      --bg:#f3f6f8;
+      --accent:#0f172a;
+    }
+    html,body{height:100%;}
+    body {
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background:var(--bg); color:var(--accent); margin:0;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    }
     .card { background: var(--card); border-radius: 12px; padding: 16px; box-shadow: 0 6px 18px rgba(2,6,23,0.06); border: 1px solid rgba(15,23,42,0.04); }
     .start-bg { background-image: url('icons/bg-desktop.jpg'); background-size:cover; background-position:center; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
     @media (max-width:768px){ .start-bg{ background-image:url('icons/bg-mobile.png'); } }
     .small-muted { color: var(--muted); font-size:13px; }
-    .sidebar { min-width: 260px; max-width: 320px; background: #fff; border-right:1px solid rgba(15,23,42,0.04); padding:16px; display:flex; flex-direction:column; gap:12px; }
+    .sidebar { min-width: 260px; max-width: 320px; background: #fff; border-right:1px solid rgba(15,23,42,0.04); padding:16px; display:flex; flex-direction:column; gap:12px; height:100vh; box-sizing:border-box; overflow:auto; }
     .sidebar .list { max-height:220px; overflow:auto; border:1px solid rgba(15,23,42,0.04); border-radius:8px; padding:6px; }
-    .sidebar button.primary { background:var(--emerald); color:white; padding:10px; border-radius:8px; }
+    .commodity-btn { width:100%; text-align:left; padding:10px; border-radius:8px; border:none; background:transparent; display:block; cursor:pointer; transition: background-color .12s, transform .06s;}
+    .commodity-btn:hover { background:#f5f7f9; transform:translateY(-1px); }
+    .commodity-btn.active { background:var(--emerald); color:white; font-weight:700; }
     .nav-tabs button.active { border-bottom:3px solid var(--emerald); color:var(--emerald); font-weight:600; }
-    .snapshot-table { max-height:160px; overflow:auto; display:block; }
+    .snapshot-table { max-height:180px; overflow:auto; display:block; border-radius:8px; }
     .snapshot-table table { width:100%; border-collapse:collapse; }
     .snapshot-table td, .snapshot-table th { padding:8px; border-bottom:1px solid rgba(15,23,42,0.04); font-size:13px; }
     .recommend-card { border-radius:10px; padding:12px; border:1px solid rgba(16,185,129,0.08); background:linear-gradient(180deg, rgba(16,185,129,0.02), transparent); }
@@ -39,7 +52,9 @@
     .strategy-sell { background:#fff1f2; border:1px solid #fecaca; color:#7f1d1d; }
     .top-recs { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; }
     .chart-card { height:360px; }
-    /* mobile tweaks */
+    table.compact td, table.compact th { padding:8px; font-size:13px; }
+    .trend-up { color:#16a34a; font-weight:700; }
+    .trend-down { color:#ef4444; font-weight:700; }
     @media (max-width:900px) {
       .sidebar { display:none; }
       .main-wrap { padding:14px; }
@@ -52,7 +67,7 @@
 
   <!-- START SCREEN -->
   <div id="start-screen" class="start-bg">
-    <div class="card" style="max-width:900px; width:100%;">
+    <div class="card" style="max-width:980px; width:100%;">
       <div style="display:flex;align-items:center;gap:12px;justify-content:space-between">
         <div>
           <h1 style="margin:0;font-size:28px;color:var(--emerald);display:flex;align-items:center;gap:8px"><i class="fas fa-seedling"></i> Smart FarmHer</h1>
@@ -65,7 +80,7 @@
 
       <div style="margin-top:14px;display:flex;gap:12px;flex-wrap:wrap;align-items:center">
         <input id="file-input" type="file" accept=".csv,.xlsx,.xls,text/csv" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)"/>
-        <button id="start-analysis-btn" class="primary" style="padding:10px 18px; border:none; cursor:pointer;"><i class="fas fa-cloud-download-alt"></i> Load Preloaded Data</button>
+        <button id="start-analysis-btn" style="background:var(--emerald);color:white;padding:10px 18px;border-radius:8px;border:none;cursor:pointer;"><i class="fas fa-cloud-download-alt"></i> Load Preloaded Data</button>
         <button id="load-local-btn" style="padding:10px 18px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);background:#111827;color:white;"><i class="fas fa-save"></i> Load Saved</button>
       </div>
 
@@ -76,7 +91,7 @@
   <!-- MAIN -->
   <div id="main-dashboard" class="hidden" style="display:flex;min-height:100vh">
     <!-- Sidebar -->
-    <aside class="sidebar">
+    <aside class="sidebar" aria-label="Controls">
       <div style="display:flex;align-items:center;gap:8px">
         <i class="fas fa-seedling" style="color:var(--emerald);font-size:20px"></i>
         <div style="font-weight:700;color:var(--emerald)">Smart FarmHer</div>
@@ -85,7 +100,7 @@
       <div>
         <label class="small-muted">Markets</label>
         <select id="market-select" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);margin-top:6px"></select>
-        <div style="margin-top:6px;display:flex;gap:8px">
+        <div style="margin-top:8px;display:flex;gap:8px">
           <button id="geo-locate" title="Detect my location" class="small-muted" style="padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);background:#fff"><i class="fas fa-location-arrow"></i></button>
           <button id="manage-markets-btn" title="Manage markets" class="small-muted" style="padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);background:#fff">Manage</button>
         </div>
@@ -98,7 +113,7 @@
 
       <div>
         <label class="small-muted">Commodity</label>
-        <div id="commodity-list" class="list"></div>
+        <div id="commodity-list" class="list" aria-label="Commodities"></div>
       </div>
 
       <div>
@@ -115,7 +130,7 @@
       </div>
 
       <div style="display:flex;gap:8px;margin-top:10px">
-        <button id="apply-filters" class="primary" style="flex:1;border:none">Apply</button>
+        <button id="apply-filters" style="flex:1;background:var(--emerald);color:white;padding:10px;border-radius:8px;border:none">Apply</button>
         <button id="reset-filters" style="flex:1;border-radius:8px;border:1px solid rgba(15,23,42,0.06)">Reset</button>
       </div>
 
@@ -159,7 +174,7 @@
           </div>
 
           <div class="snapshot-table card" style="margin-top:12px; padding:0;">
-            <table>
+            <table class="compact">
               <thead><tr><th style="text-align:left;padding:8px;background:#fbfdff">Market</th><th style="text-align:left;padding:8px;background:#fbfdff">Commodity</th><th style="text-align:left;padding:8px;background:#fbfdff">Variety</th><th style="text-align:right;padding:8px;background:#fbfdff">Modal</th><th style="text-align:right;padding:8px;background:#fbfdff">Min</th><th style="text-align:right;padding:8px;background:#fbfdff">Max</th></tr></thead>
               <tbody id="snapshot-table-body"><tr><td colspan="6" style="text-align:center;padding:12px;color:var(--muted)">No data loaded.</td></tr></tbody>
             </table>
@@ -187,7 +202,7 @@
             <button id="export-csv" style="background:#0f172a;color:white;padding:8px;border-radius:8px;border:none"><i class="fas fa-download"></i> Export CSV</button>
           </div>
           <div style="margin-top:12px; overflow:auto; max-height:320px">
-            <table style="width:100%;border-collapse:collapse">
+            <table style="width:100%;border-collapse:collapse" id="detailed-table">
               <thead style="background:#fbfdff"><tr><th style="padding:10px;text-align:left">Date</th><th style="padding:10px">Market</th><th style="padding:10px">Commodity</th><th style="padding:10px">Variety</th><th style="padding:10px">Modal</th><th style="padding:10px">Min</th><th style="padding:10px">Max</th><th style="padding:10px">Trend</th></tr></thead>
               <tbody id="price-table-body"><tr><td colspan="8" style="padding:12px;color:var(--muted);text-align:center">No data</td></tr></tbody>
             </table>
@@ -203,7 +218,7 @@
         </div>
 
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
-          <div class="strategy-card strategy-wait card">
+          <div id="strategy-box" class="strategy-card strategy-wait card">
             <h4 style="margin:0">Strategic Signal</h4>
             <div id="strategy-signal" style="font-size:28px;font-weight:800;margin-top:8px">—</div>
             <div id="strategy-detail" class="small-muted" style="margin-top:8px">—</div>
@@ -269,10 +284,6 @@
 /* ===================
    Configuration
    =================== */
-
-/*
- Set your CSV raw URL here (you provided this link)
-*/
 const PRELOADED_RAW_URL = 'https://raw.githubusercontent.com/chetankdrmz-max/Smart_FarmHer/refs/heads/main/data/Raw_Concatenated.csv';
 const STORAGE_KEY = 'agri_dashboard_store_v1';
 const IDB_DBNAME = 'agri_analyst_db_v1';
@@ -284,7 +295,7 @@ let markets = [];
 let filteredRows = [];
 let currentCommodity = '';
 let currentVariety = 'All';
-let priceChart=null, distributionChart=null, forecastChart=null;
+let priceChart=null, forecastChart=null;
 
 /* -----------------------
    IndexedDB helpers
@@ -337,7 +348,7 @@ function normalizeRow(r){
   const modal = parseFloat(r.Modal_Price_Kg || r.Modal_Price || r.modal || r.Modal_Price || 0) || 0;
   const minp = parseFloat(r.Min_Price_Kg || r.Min_Price || r.Min_Price_Q || 0) || 0;
   const maxp = parseFloat(r.Max_Price_Kg || r.Max_Price || r.Max_Price_Q || 0) || 0;
-  const category = (r.Category || r.category || '').toString().trim() || 'Other';
+  const category = (r.Category || r.category || '').toString().trim() || 'Others';
   const date = dateStr ? new Date(dateStr) : null;
   return { date, commodity, variety, market, district, modalPriceKg: modal, minPriceKg: minp, maxPriceKg: maxp, category };
 }
@@ -353,65 +364,29 @@ function processPreloadedData(rows){
 }
 
 /* -----------------------
-   UI helpers
+   UI refresh & helpers
    ----------------------- */
-
-/* Safe escape helper */
-function escapeHtml(str) {
-  return String(str || '')
-    .replace(/&/g, "&amp;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
-/* populate markets management table (fallback safe function) */
-function populateMarketsTable() {
-  try {
-    const tbody = document.getElementById('markets-table-body');
-    if (!tbody) return;
-    tbody.innerHTML = (markets || []).map((m, idx) => {
-      const lat = m.lat !== null && m.lat !== undefined ? m.lat : '';
-      const lon = m.lon !== null && m.lon !== undefined ? m.lon : '';
-      return `<tr>
-        <td class="p-1 text-sm">${escapeHtml(String(m.name || ''))}</td>
-        <td class="p-1 text-sm">${escapeHtml(String(lat))}</td>
-        <td class="p-1 text-sm">${escapeHtml(String(lon))}</td>
-        <td class="p-1"><button class="text-red-500 text-xs" onclick="removeMarket(${idx})">Remove</button></td>
-      </tr>`;
-    }).join('');
-  } catch (err) {
-    console.warn('populateMarketsTable fallback error:', err);
-  }
-}
-
 function refreshAllUI(){
   try {
-    if (typeof populateMarketSelect === 'function') populateMarketSelect();
-    if (typeof populateCategoryFilter === 'function') populateCategoryFilter();
-    if (typeof populateCommodityList === 'function') populateCommodityList();
-    if (typeof populateVarietyFilter === 'function') populateVarietyFilter();
-    if (typeof setDefaultDateRange === 'function') setDefaultDateRange();
-    if (typeof applyFilters === 'function') applyFilters();
-    if (typeof updateSnapshotTable === 'function') updateSnapshotTable();
-    if (typeof updateSummaryCards === 'function') updateSummaryCards();
-    if (typeof updatePriceChart === 'function') updatePriceChart();
-    if (typeof updateDistributionChart === 'function') updateDistributionChart();
-    if (typeof updateDataTable === 'function') updateDataTable();
-    if (typeof populateMarketsTable === 'function') populateMarketsTable();
-
+    populateMarketSelect();
+    populateCategoryFilter();
+    populateCommodityList();
+    populateVarietyFilter();
+    setDefaultDateRange();
+    applyFilters();
+    updateSnapshotTable();
+    updateSummaryCards();
+    updatePriceChart();
+    updateDistributionChart();
+    updateDataTable();
+    populateMarketsTable(); // safe fallback if UI exists
     const predEl = document.getElementById('prediction-content');
-    const predVisible = predEl && !predEl.classList.contains('hidden');
-    if (predVisible && typeof computeForecastAndRender === 'function') {
-      try { computeForecastAndRender(); } catch(e) { console.warn('computeForecastAndRender error', e); }
-    }
+    if (predEl && !predEl.classList.contains('hidden') && typeof computeForecastAndRender === 'function') computeForecastAndRender();
   } catch (err) {
-    console.error('refreshAllUI error:', err);
+    console.error('refreshAllUI error', err);
   }
 }
 
-/* marketplace UI functions */
 function populateMarketSelect(){
   const sel = document.getElementById('market-select'); if(!sel) return;
   sel.innerHTML=''; markets.forEach(m=>{ const o=document.createElement('option'); o.value=m.name; o.textContent=m.name; sel.appendChild(o); });
@@ -419,7 +394,7 @@ function populateMarketSelect(){
 }
 
 function populateCategoryFilter(){
-  const cats = [...new Set(commodityRows.map(r=>r.category||'Other'))].sort(); const sel = document.getElementById('category-filter'); if(!sel) return;
+  const cats = [...new Set(commodityRows.map(r=>r.category||'Others'))].sort(); const sel = document.getElementById('category-filter'); if(!sel) return;
   sel.innerHTML = '<option value="All">All</option>'; cats.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
 }
 
@@ -428,11 +403,13 @@ function populateCommodityList(){
   const selCat = (document.getElementById('category-filter')||{}).value || 'All';
   const comms = [...new Set(commodityRows.filter(r => selCat==='All' || r.category===selCat).map(r=>r.commodity))].sort();
   container.innerHTML=''; comms.forEach(c => {
-    const btn = document.createElement('button'); btn.textContent = c; btn.className=''; btn.style.width='100%'; btn.style.textAlign='left'; btn.style.padding='8px'; btn.style.border='none'; btn.style.background='transparent';
-    btn.onclick = ()=>{ currentCommodity = c; document.querySelectorAll('#commodity-list button').forEach(x=>x.style.fontWeight=''); btn.style.fontWeight='700'; populateVarietyFilter(); applyFilters(); };
+    const btn = document.createElement('button');
+    btn.textContent = c;
+    btn.className = 'commodity-btn';
+    btn.onclick = ()=>{ currentCommodity = c; document.querySelectorAll('#commodity-list button').forEach(x=>x.classList.remove('active')); btn.classList.add('active'); populateVarietyFilter(); applyFilters(); };
     container.appendChild(btn);
   });
-  if(!currentCommodity && comms.length) { currentCommodity = comms[0]; container.firstChild.style.fontWeight='700'; populateVarietyFilter(); }
+  if(!currentCommodity && comms.length) { currentCommodity = comms[0]; const first = container.querySelector('button'); if(first) first.classList.add('active'); populateVarietyFilter(); }
 }
 
 function populateVarietyFilter(){
@@ -486,7 +463,7 @@ function updateSnapshotTable(){
   const snapshot = commodityRows.filter(r => (new Date(r.date)).toISOString().split('T')[0] === latestStr);
   document.getElementById('snapshot-count').textContent = snapshot.length;
   if(!snapshot.length){ body.innerHTML='<tr><td colspan="6" style="text-align:center;padding:12px;color:var(--muted)">No data for latest date.</td></tr>'; return; }
-  body.innerHTML = snapshot.map(s => `<tr><td style="padding:8px">${s.market}</td><td style="padding:8px">${s.commodity}</td><td style="padding:8px">${s.variety}</td><td style="padding:8px;text-align:right">₹${s.modalPriceKg.toFixed(2)}</td><td style="padding:8px;text-align:right">₹${s.minPriceKg.toFixed(2)}</td><td style="padding:8px;text-align:right">₹${s.maxPriceKg.toFixed(2)}</td></tr>`).join('');
+  body.innerHTML = snapshot.map(s => `<tr><td style="padding:8px">${escapeHtml(s.market)}</td><td style="padding:8px">${escapeHtml(s.commodity)}</td><td style="padding:8px">${escapeHtml(s.variety)}</td><td style="padding:8px;text-align:right">₹${s.modalPriceKg.toFixed(2)}</td><td style="padding:8px;text-align:right">₹${s.minPriceKg.toFixed(2)}</td><td style="padding:8px;text-align:right">₹${s.maxPriceKg.toFixed(2)}</td></tr>`).join('');
 }
 
 function updateSummaryCards(){
@@ -513,14 +490,14 @@ function updatePriceChart(){
   priceChart = new Chart(ctx, {
     type:'line',
     data:{ datasets:[
-      { label:'Modal Price', data: filteredRows.map(r=>({x:new Date(r.date), y:r.modalPriceKg})), borderColor:'rgb(34,197,94)', backgroundColor:'rgba(16,185,129,0.06)', fill:true, tension:0.25, pointRadius:0 }
+      { label:'Modal Price', data: filteredRows.map(r=>({x:new Date(r.date), y:r.modalPriceKg})), borderColor: 'rgb(16,185,129)', backgroundColor:'rgba(16,185,129,0.06)', fill:true, tension:0.2, pointRadius:0 }
     ] },
-    options: { parsing:false, scales:{ x:{ type:'time', time:{ unit:'month' } }, y:{ beginAtZero:false } }, plugins:{ legend:{display:false} } }
+    options: { parsing:false, scales:{ x:{ type:'time', time:{ unit:'month' } }, y:{ beginAtZero:false } }, plugins:{ legend:{display:false}, tooltip:{mode:'index', intersect:false} } }
   });
 }
 
 function updateDistributionChart(){
-  // left intentionally light — can be added if desired
+  // intentionally minimal
 }
 
 /* Data table */
@@ -528,7 +505,18 @@ function updateDataTable(){
   const body = document.getElementById('price-table-body'); if(!body) return;
   if(!filteredRows.length){ body.innerHTML = '<tr><td colspan="8" style="padding:12px;text-align:center;color:var(--muted)">No data</td></tr>'; return; }
   const last = filteredRows.slice(-20).reverse();
-  body.innerHTML = last.map(r=>`<tr style="border-bottom:1px solid rgba(15,23,42,0.04)"><td style="padding:10px">${new Date(r.date).toLocaleDateString()}</td><td style="padding:10px">${r.market}</td><td style="padding:10px">${r.commodity}</td><td style="padding:10px">${r.variety}</td><td style="padding:10px;text-align:right">₹${r.modalPriceKg.toFixed(2)}</td><td style="padding:10px;text-align:right">₹${r.minPriceKg.toFixed(2)}</td><td style="padding:10px;text-align:right">₹${r.maxPriceKg.toFixed(2)}</td><td style="padding:10px;text-align:center">—</td></tr>`).join('');
+  body.innerHTML = last.map((r, idx) => {
+    const allSame = commodityRows.filter(rr=>rr.commodity===r.commodity && rr.market===r.market).sort((a,b)=>new Date(a.date)-new Date(b.date));
+    const pos = allSame.findIndex(xx => new Date(xx.date).toISOString() === new Date(r.date).toISOString());
+    let trendHtml = '—';
+    if(pos>0){
+      const prev = allSame[pos-1];
+      if(r.modalPriceKg > prev.modalPriceKg) trendHtml = `<span class="trend-up">▲</span>`;
+      else if(r.modalPriceKg < prev.modalPriceKg) trendHtml = `<span class="trend-down">▼</span>`;
+      else trendHtml = '—';
+    }
+    return `<tr style="border-bottom:1px solid rgba(15,23,42,0.04)"><td style="padding:10px">${new Date(r.date).toLocaleDateString()}</td><td style="padding:10px">${escapeHtml(r.market)}</td><td style="padding:10px">${escapeHtml(r.commodity)}</td><td style="padding:10px">${escapeHtml(r.variety)}</td><td style="padding:10px;text-align:right">₹${r.modalPriceKg.toFixed(2)}</td><td style="padding:10px;text-align:right">₹${r.minPriceKg.toFixed(2)}</td><td style="padding:10px;text-align:right">₹${r.maxPriceKg.toFixed(2)}</td><td style="padding:10px;text-align:center">${trendHtml}</td></tr>`;
+  }).join('');
 }
 
 /* -----------------------
@@ -573,35 +561,38 @@ function computeForecastAndRender(){
     type:'line',
     data:{
       datasets:[
-        { label:'Historical Price', data: dataHist, borderColor:'#10b981', backgroundColor:'rgba(16,185,129,0.06)', fill:true, tension:0.25, pointRadius:0 },
-        { label:'Forecasted Price', data: dataFc, borderColor:'#ef4444', borderDash:[6,6], pointRadius:0, fill:false, tension:0.25 }
+        { label:'Historical Price', data: dataHist, borderColor:'#10b981', backgroundColor:'rgba(16,185,129,0.06)', fill:true, tension:0.2, pointRadius:0 },
+        { label:'Forecasted Price', data: dataFc, borderColor:'#ef4444', borderDash:[6,6], pointRadius:0, fill:false, tension:0.2 }
       ]
     },
     options:{ parsing:false, scales:{ x:{ type:'time', time:{unit:'month'} }, y:{ beginAtZero:false } }, plugins:{ legend:{display:true} } }
   });
 
+  // Strategy signal
   const fvals = forecast.slice(0,14).map(f=>f.y);
-  const sl = fvals.length>1 ? (fvals[fvals.length-1] - fvals[0]) / Math.max(1, fvals[0]) : 0;
-  const avgAll = filteredRows.reduce((a,b)=>a+b.modalPriceKg,0)/Math.max(1,filteredRows.length);
-  const vol = Math.sqrt(filteredRows.map(r=>Math.pow(r.modalPriceKg - avgAll,2)).reduce((a,b)=>a+b,0) / Math.max(1,filteredRows.length));
+  const sl = (fvals.length>1) ? (fvals[fvals.length-1] - fvals[0]) / Math.max(1, fvals[0]) : 0;
+  const vol = filteredRows.length ? Math.sqrt(filteredRows.map(r=>Math.pow(r.modalPriceKg - (filteredRows.reduce((a,b)=>a+b.modalPriceKg,0)/filteredRows.length),2)).reduce((a,b)=>a+b,0) / filteredRows.length) : 0;
   const confidence = Math.max(0, Math.min(100, 100 - vol*200));
   document.getElementById('forecast-confidence').textContent = `${Math.round(confidence)}%`;
 
   let signal = 'Wait', detail='Prices are forecast to be stable or slightly decrease.';
-  const signalElParent = document.getElementById('strategy-signal').parentElement;
-  if(sl > 0.10) { signal='Buy'; detail='Prices are trending up — consider holding to sell later.'; signalElParent.className='strategy-card strategy-buy card'; }
-  else if(sl < -0.05) { signal='Sell'; detail='Prices are trending down — consider selling soon.'; signalElParent.className='strategy-card strategy-sell card'; }
-  else { signal='Wait'; detail='No strong upward trend — hold for better selling price if storage allows.'; signalElParent.className='strategy-card strategy-wait card'; }
+  const strategyBox = document.getElementById('strategy-box');
+  if(sl > 0.10) { signal='Consider Growing'; detail='90-day forecast shows positive trend — good potential if you plant now.'; strategyBox.className='strategy-card strategy-buy card'; }
+  else if(sl < -0.05) { signal='Sell / Hold with caution'; detail='Prices trending down — consider selling if storage cost is high.'; strategyBox.className='strategy-card strategy-sell card'; }
+  else { signal='Wait'; detail='No strong upward trend — consider holding for best timing.'; strategyBox.className='strategy-card strategy-wait card'; }
   document.getElementById('strategy-signal').textContent = signal;
   document.getElementById('strategy-detail').textContent = detail;
 
+  // Peak month
   const monthly = {};
   filteredRows.forEach(r=>{ const m = new Date(r.date).getMonth()+1; monthly[m] = monthly[m] || []; monthly[m].push(r.modalPriceKg); });
   const avgByMonth = Object.keys(monthly).map(k=>({m:parseInt(k), avg: monthly[k].reduce((a,b)=>a+b,0)/monthly[k].length}));
   if(avgByMonth.length){ const peak = avgByMonth.reduce((a,b)=>a.avg > b.avg ? a : b); const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; document.getElementById('peak-month').textContent = months[peak.m-1]; } else document.getElementById('peak-month').textContent='—';
 
+  // Prediction outlook text
   const outlook = document.getElementById('prediction-outlook');
-  outlook.innerHTML = `<div class="card"><strong>Forecast summary:</strong> Next 90 days trend ${(sl>0.05)?'positive':(sl<-0.05?'negative':'neutral')}. Average forecast price (first 30d): ₹${(forecast.slice(0,30).reduce((a,b)=>a+b.y,0)/Math.max(1,forecast.slice(0,30).length)).toFixed(2)}</div>`;
+  const avgForecast30 = forecast.slice(0,30).length ? (forecast.slice(0,30).reduce((a,b)=>a+b.y,0)/forecast.slice(0,30).length).toFixed(2) : '—';
+  outlook.innerHTML = `<div class="card"><strong>Forecast summary:</strong> Next 90 days trend is ${(sl>0.05)?'positive':(sl<-0.05?'negative':'neutral')}. Avg forecast price (30d): ₹${avgForecast30}</div>`;
 }
 
 /* -----------------------
@@ -611,30 +602,46 @@ function generateRecommendations(count=10){
   const commodities = [...new Set(commodityRows.map(r=>r.commodity))];
   const recs = commodities.map(name=>{
     const rows = commodityRows.filter(r=>r.commodity===name).slice(-60);
-    if(rows.length < 6) return null;
+    if(rows.length < 8) return null;
     const prices = rows.map(r=>r.modalPriceKg);
     const avg = prices.reduce((a,b)=>a+b,0)/prices.length;
     const change = (prices[prices.length-1]-prices[0]) / Math.max(1, prices[0]);
     const variance = prices.reduce((s,p)=>s+Math.pow(p-avg,2),0)/prices.length;
     const vol = Math.sqrt(variance)/Math.max(1,avg);
-    const score = (1 + change) / (vol + 0.05);
+    const score = (1 + Math.max(-0.5, change)) / (vol + 0.05);
     const risk = vol < 0.1 ? 'Low' : vol < 0.2 ? 'Medium' : 'High';
-    return {commodity:name, avgPrice:avg, priceChangePct: change*100, volatility: vol, score, risk};
+    // category from data (fallback to Others)
+    const sample = commodityRows.find(r=>r.commodity===name);
+    const category = sample ? (sample.category || 'Others') : 'Others';
+    return {commodity:name, avgPrice:avg, priceChangePct: change*100, volatility: vol, score, risk, category};
   }).filter(Boolean).sort((a,b)=>b.score-a.score);
   return recs.slice(0,count);
 }
 
 function generateTopCropsUI(){
-  const recs = generateRecommendations(10);
+  const recs = generateRecommendations(20);
   const cont = document.getElementById('top-crops-container'); if(!cont) return;
-  cont.innerHTML = recs.map((r,i)=>`<div class="recommend-card"><div style="display:flex;justify-content:space-between;align-items:start"><div><div style="font-size:14px;color:var(--muted)">#${i+1}</div><div style="font-weight:700;font-size:16px">${r.commodity}</div><div class="small-muted" style="margin-top:6px">Avg ₹${r.avgPrice.toFixed(2)}/kg</div></div><div style="text-align:right"><span style="background:${r.risk==='Low'?'#ecfdf5':r.risk==='Medium'?'#fffbeb':'#fff1f2'};padding:6px 8px;border-radius:12px;font-size:12px">${r.risk} RISK</span></div></div><div style="margin-top:8px;display:flex;gap:8px;justify-content:flex-end"><button onclick="showGrowSheet('${r.commodity.replace(/'/g,'\\\'')}')" style="background:var(--emerald);color:white;padding:8px;border-radius:8px;border:none">Grow Sheet</button><a href="#" onclick="showYouTubeRecommendations('${r.commodity.replace(/'/g,'\\\'')}');return false;" class="small-muted">YouTube</a></div></div>`).join('');
-}
-
-function showRecommendationsModal(){
-  const recs = generateRecommendations(3);
-  if(!recs.length){ alert('No recommendations'); return; }
-  generateTopCropsUI();
-  document.getElementById('tab-top-crops').click();
+  const groups = {};
+  recs.forEach(r=>{ const cat = r.category || 'Others'; groups[cat] = groups[cat] || []; groups[cat].push(r); });
+  let html = '';
+  Object.keys(groups).forEach(cat=>{
+    html += `<div style="grid-column:1/-1;margin-bottom:6px"><strong>${escapeHtml(cat)}</strong></div>`;
+    groups[cat].slice(0,10).forEach((r,i)=>{
+      html += `<div class="card" style="border:1px solid rgba(16,185,129,0.06);padding:12px">
+        <div style="display:flex;justify-content:space-between;align-items:start">
+          <div>
+            <div style="font-size:13px;color:var(--muted)">Avg ₹${r.avgPrice.toFixed(2)}/kg</div>
+            <div style="font-weight:700;font-size:16px">${escapeHtml(r.commodity)}</div>
+          </div>
+          <div style="text-align:right"><span style="background:${r.risk==='Low'?'#ecfdf5':r.risk==='Medium'?'#fffbeb':'#fff1f2'};padding:6px 8px;border-radius:12px;font-size:12px">${r.risk} RISK</span></div>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end">
+          <div style="background:var(--emerald);color:white;padding:8px 14px;border-radius:8px;font-weight:600">Recommend</div>
+        </div>
+      </div>`;
+    });
+  });
+  cont.innerHTML = html;
 }
 
 /* Grow sheet */
@@ -650,28 +657,13 @@ function showGrowSheet(commodity){
     <li><strong>Pest management:</strong> IPM, biocontrol & spot sprays</li>
     <li><strong>Harvest:</strong> Harvest at maturity window for best price</li>
     </ul></div>
-    <div style="margin-top:10px"><button onclick="printGrowSheet('${commodity.replace(/'/g,'\\\'')}')" style="background:#111827;color:white;padding:8px;border-radius:8px;border:none">Print</button> <button onclick="renderYouTubeEmbed('${commodity.replace(/'/g,'\\\'')}')" style="padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)">Embed video</button></div>`;
+    <div style="margin-top:10px"><button onclick="printGrowSheet('${commodity.replace(/'/g,'\\\'')}')" style="background:#111827;color:white;padding:8px;border-radius:8px;border:none">Print</button></div>`;
   container.scrollIntoView({behavior:'smooth'});
 }
 
 function printGrowSheet(commodity){
   const html = `<html><head><title>Grow Sheet - ${commodity}</title></head><body><h2>Grow Sheet — ${commodity}</h2><p>Soil: Well-drained ...</p></body></html>`;
   const w = window.open('','_blank'); w.document.write(html); w.document.close(); w.print();
-}
-
-/* YouTube lightweight */
-function showYouTubeRecommendations(commodity){
-  const cont = document.getElementById('video-recommendations'); if(!cont) return;
-  const q = encodeURIComponent(commodity + ' cultivation tutorial');
-  cont.innerHTML = `<h4 style="margin:0 0 8px 0">Video recommendations for ${commodity}</h4><ul><li><a href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener">YouTube search: ${commodity}</a></li></ul>`;
-  cont.scrollIntoView({behavior:'smooth'});
-}
-
-function renderYouTubeEmbed(commodity){
-  if(!confirm('Embedding YouTube will increase page size. Continue?')) return;
-  const vid = prompt('Paste YouTube video ID (e.g. dQw4w9WgXcQ) to embed for ' + commodity);
-  if(!vid) return;
-  document.getElementById('video-recommendations').innerHTML = `<iframe width="100%" height="360" src="https://www.youtube.com/embed/${vid}" frameborder="0" allowfullscreen></iframe>`;
 }
 
 /* -----------------------
@@ -682,7 +674,7 @@ async function renderWeatherForCurrentMarket(){
   const marketName = sel.value;
   const market = markets.find(m=>m.name===marketName);
   const container = document.getElementById('weather-container'); if(!container) return;
-  if(!market || !market.lat || !market.lon){ container.innerHTML = `<div class="small-muted">No coordinates for "${marketName}". Use Manage or location detect to add coordinates.</div>`; return; }
+  if(!market || !market.lat || !market.lon){ container.innerHTML = `<div class="small-muted">No coordinates for "${escapeHtml(marketName)}". Use Manage or location detect to add coordinates.</div>`; return; }
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${market.lat}&longitude=${market.lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto`;
   try {
     const res = await fetch(url); const json = await res.json();
@@ -712,7 +704,29 @@ async function handleFileImport(file){
     }
     alert('Imported successfully');
     showDashboardAfterLoad();
-  } catch(e){ console.error(e); alert('Import failed: ' + (e.message||e)); }
+  } catch(e){ console.error(e); alert('Import failed: ' + (e.message || e)); }
+}
+
+/* -----------------------
+   Populate markets table (fallback)
+   ----------------------- */
+function populateMarketsTable(){
+  const tbody = document.getElementById('markets-table-body');
+  if(!tbody) return;
+  tbody.innerHTML = (markets || []).map((m, idx)=>`<tr><td class="p-1 text-sm">${escapeHtml(String(m.name||''))}</td><td class="p-1 text-sm">${m.lat||''}</td><td class="p-1 text-sm">${m.lon||''}</td><td class="p-1"><button class="text-red-500 text-xs" onclick="removeMarket(${idx})">Remove</button></td></tr>`).join('');
+}
+function removeMarket(i){ markets.splice(i,1); saveToLocal().catch(()=>{}); populateMarketsTable(); populateMarketSelect(); }
+
+/* -----------------------
+   Small helpers
+   ----------------------- */
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 /* -----------------------
@@ -721,9 +735,9 @@ async function handleFileImport(file){
 function showDashboardAfterLoad(){ document.getElementById('start-screen').classList.add('hidden'); document.getElementById('main-dashboard').classList.remove('hidden'); refreshAllUI(); }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // show start screen
-  document.getElementById('start-screen').classList.remove('hidden');
-  document.getElementById('main-dashboard').classList.add('hidden');
+  // start screen visible by default
+  document.getElementById('start-screen')?.classList.remove('hidden');
+  document.getElementById('main-dashboard')?.classList.add('hidden');
 
   // wire start preloaded
   document.getElementById('start-analysis-btn')?.addEventListener('click', async ()=>{
@@ -754,9 +768,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('apply-filters')?.addEventListener('click', applyFilters);
   document.getElementById('reset-filters')?.addEventListener('click', resetFilters);
   document.getElementById('add-record-btn')?.addEventListener('click', openAddModal);
-  document.getElementById('export-all-btn')?.addEventListener('click', ()=>{ if(!commodityRows.length){ alert('No data'); return; } const headers=['Date','Market','Commodity','Variety','Category','District','Min','Max','Modal']; const rows=commodityRows.map(r=>[new Date(r.date).toISOString().split('T')[0],r.market,r.commodity,r.variety,r.category,r.district,r.minPriceKg,r.maxPriceKg,r.modalPriceKg]); const csv=[headers.join(','), ...rows.map(rr=>rr.map(cell=>typeof cell==='string' && cell.includes(',')?`"${cell.replace(/"/g,'""')}"`:cell).join(',')).join('\n')]; const link=document.createElement('a'); link.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv.join('\n')); link.download='agri_export.csv'; document.body.appendChild(link); link.click(); link.remove(); });
+  document.getElementById('export-all-btn')?.addEventListener('click', ()=>{ if(!commodityRows.length){ alert('No data'); return; } const headers=['Date','Market','Commodity','Variety','Category','District','Min','Max','Modal']; const rows=commodityRows.map(r=>[new Date(r.date).toISOString().split('T')[0],r.market,r.commodity,r.variety,r.category,r.district,r.minPriceKg,r.maxPriceKg,r.modalPriceKg]); const csv=[headers.join(','), ...rows.map(rr=>rr.map(cell=>typeof cell==='string' && cell.includes(',')?`"${cell.replace(/"/g,'""')}"`:cell).join(','))].join('\n'); const link=document.createElement('a'); link.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); link.download='agri_export.csv'; document.body.appendChild(link); link.click(); link.remove(); });
   document.getElementById('clear-storage-btn')?.addEventListener('click', clearLocal);
-  document.getElementById('get-recommendations')?.addEventListener('click', ()=>{ generateTopCropsUI(); showRecommendationsModal(); });
+  document.getElementById('get-recommendations')?.addEventListener('click', ()=>{ generateTopCropsUI(); document.getElementById('tab-top-crops').click(); });
 
   // tabs
   document.getElementById('tab-dashboard')?.addEventListener('click', ()=>{ document.getElementById('dashboard-content').classList.remove('hidden'); document.getElementById('prediction-content').classList.add('hidden'); document.getElementById('top-crops-content').classList.add('hidden'); document.querySelectorAll('.nav-tabs button').forEach(b=>b.classList.remove('active')); document.getElementById('tab-dashboard').classList.add('active'); });
@@ -772,10 +786,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const link = document.createElement('a'); link.href='data:text/csv;charset=utf-8,' + encodeURIComponent(csv); link.download='export_filtered.csv'; document.body.appendChild(link); link.click(); link.remove();
   });
 
-  // load saved in background (not auto-show)
+  // load saved
   loadFromLocalSync();
 
-  // geolocation button
+  // geolocation
   document.getElementById('geo-locate')?.addEventListener('click', ()=>{
     if(!navigator.geolocation){ alert('Geolocation not supported'); return; }
     navigator.geolocation.getCurrentPosition(pos=>{
@@ -796,14 +810,14 @@ document.addEventListener('DOMContentLoaded', () => {
 function openAddModal(){
   document.getElementById('modal-add-record').style.display='flex';
   document.getElementById('delete-record-btn').style.display='none';
-  document.getElementById('rec-market').innerHTML = markets.map(m=>`<option value="${m.name}">${m.name}</option>`).join('');
+  document.getElementById('rec-market').innerHTML = markets.map(m=>`<option value="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>`).join('');
   document.getElementById('record-form').onsubmit = (e)=>{ e.preventDefault();
     const newRow = {
       date: new Date(document.getElementById('rec-date').value),
       market: document.getElementById('rec-market').value,
       commodity: document.getElementById('rec-commodity').value,
       variety: document.getElementById('rec-variety').value || 'Default',
-      category: document.getElementById('rec-category').value || 'Other',
+      category: document.getElementById('rec-category').value || 'Others',
       district: document.getElementById('rec-district').value || '',
       modalPriceKg: parseFloat(document.getElementById('rec-modal').value) || 0,
       minPriceKg: parseFloat(document.getElementById('rec-min').value) || 0,
@@ -817,28 +831,13 @@ function openAddModal(){
   };
 }
 
-/* remove market */
-function removeMarket(i){ markets.splice(i,1); saveToLocal().catch(()=>{}); populateMarketsSelectAndTable(); refreshAllUI(); }
-function populateMarketsSelectAndTable(){ populateMarketSelect(); populateMarketsTable(); }
-
-</script>
-
-<!-- service worker registration (single robust registration) -->
-<script>
+/* -----------------------
+   Service worker registration
+   ----------------------- */
 if ('serviceWorker' in navigator) {
   const swPath = location.pathname.startsWith('/Smart_FarmHer') ? '/Smart_FarmHer/service-worker.js' : '/service-worker.js';
   navigator.serviceWorker.register(swPath, { scope: location.pathname.startsWith('/Smart_FarmHer') ? '/Smart_FarmHer/' : '/' })
-    .then(reg => {
-      console.log('Service worker registered:', reg);
-      reg.addEventListener('updatefound', () => {
-        const newW = reg.installing;
-        newW.addEventListener('statechange', () => {
-          if (newW.state === 'installed' && navigator.serviceWorker.controller) {
-            console.log('New content available; you may want to refresh.');
-          }
-        });
-      });
-    })
+    .then(reg => { console.log('Service worker registered:', reg); })
     .catch(err => console.warn('SW registration failed:', err));
 }
 </script>
