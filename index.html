@@ -269,6 +269,10 @@
 /* ===================
    Configuration
    =================== */
+
+/*
+ Set your CSV raw URL here (you provided this link)
+*/
 const PRELOADED_RAW_URL = 'https://raw.githubusercontent.com/chetankdrmz-max/Smart_FarmHer/refs/heads/main/data/Raw_Concatenated.csv';
 const STORAGE_KEY = 'agri_dashboard_store_v1';
 const IDB_DBNAME = 'agri_analyst_db_v1';
@@ -349,24 +353,65 @@ function processPreloadedData(rows){
 }
 
 /* -----------------------
-   UI refresh & helpers
+   UI helpers
    ----------------------- */
-function refreshAllUI(){
-  populateMarketSelect();
-  populateCategoryFilter();
-  populateCommodityList();
-  populateVarietyFilter();
-  setDefaultDateRange();
-  applyFilters();
-  updateSnapshotTable();
-  updateSummaryCards();
-  updatePriceChart();
-  updateDistributionChart();
-  updateDataTable();
-  // if on prediction tab, refresh forecast
-  if(!document.getElementById('prediction-content').classList.contains('hidden')) computeForecastAndRender();
+
+/* Safe escape helper */
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
+/* populate markets management table (fallback safe function) */
+function populateMarketsTable() {
+  try {
+    const tbody = document.getElementById('markets-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = (markets || []).map((m, idx) => {
+      const lat = m.lat !== null && m.lat !== undefined ? m.lat : '';
+      const lon = m.lon !== null && m.lon !== undefined ? m.lon : '';
+      return `<tr>
+        <td class="p-1 text-sm">${escapeHtml(String(m.name || ''))}</td>
+        <td class="p-1 text-sm">${escapeHtml(String(lat))}</td>
+        <td class="p-1 text-sm">${escapeHtml(String(lon))}</td>
+        <td class="p-1"><button class="text-red-500 text-xs" onclick="removeMarket(${idx})">Remove</button></td>
+      </tr>`;
+    }).join('');
+  } catch (err) {
+    console.warn('populateMarketsTable fallback error:', err);
+  }
+}
+
+function refreshAllUI(){
+  try {
+    if (typeof populateMarketSelect === 'function') populateMarketSelect();
+    if (typeof populateCategoryFilter === 'function') populateCategoryFilter();
+    if (typeof populateCommodityList === 'function') populateCommodityList();
+    if (typeof populateVarietyFilter === 'function') populateVarietyFilter();
+    if (typeof setDefaultDateRange === 'function') setDefaultDateRange();
+    if (typeof applyFilters === 'function') applyFilters();
+    if (typeof updateSnapshotTable === 'function') updateSnapshotTable();
+    if (typeof updateSummaryCards === 'function') updateSummaryCards();
+    if (typeof updatePriceChart === 'function') updatePriceChart();
+    if (typeof updateDistributionChart === 'function') updateDistributionChart();
+    if (typeof updateDataTable === 'function') updateDataTable();
+    if (typeof populateMarketsTable === 'function') populateMarketsTable();
+
+    const predEl = document.getElementById('prediction-content');
+    const predVisible = predEl && !predEl.classList.contains('hidden');
+    if (predVisible && typeof computeForecastAndRender === 'function') {
+      try { computeForecastAndRender(); } catch(e) { console.warn('computeForecastAndRender error', e); }
+    }
+  } catch (err) {
+    console.error('refreshAllUI error:', err);
+  }
+}
+
+/* marketplace UI functions */
 function populateMarketSelect(){
   const sel = document.getElementById('market-select'); if(!sel) return;
   sel.innerHTML=''; markets.forEach(m=>{ const o=document.createElement('option'); o.value=m.name; o.textContent=m.name; sel.appendChild(o); });
@@ -428,7 +473,6 @@ function updateDashboardUI(){
   document.getElementById('main-header').textContent = currentCommodity ? `${currentCommodity} Dashboard` : 'Dashboard';
   updateSnapshotTable(); updateSummaryCards(); updatePriceChart(); updateDistributionChart(); updateDataTable();
   renderWeatherForCurrentMarket();
-  // if on prediction tab, compute forecast
   if(!document.getElementById('prediction-content').classList.contains('hidden')) computeForecastAndRender();
 }
 
@@ -453,7 +497,6 @@ function updateSummaryCards(){
   const prices = filteredRows.map(r=>r.modalPriceKg);
   const avg = prices.reduce((a,b)=>a+b,0)/prices.length;
   const minP = Math.min(...prices), maxP = Math.max(...prices);
-  const change = prev.modalPriceKg ? ((latest.modalPriceKg - prev.modalPriceKg)/prev.modalPriceKg)*100 : 0;
   const cards = [
     {title:'Latest Price', value:`₹${latest.modalPriceKg.toFixed(2)}`, sub: currentCommodity || ''},
     {title:'Average Price', value:`₹${avg.toFixed(2)}`, sub:'Period Avg'},
@@ -477,8 +520,7 @@ function updatePriceChart(){
 }
 
 function updateDistributionChart(){
-  // simple bar distribution of modal prices
-  // omitted separate canvas for brevity in this page (you can add if needed)
+  // left intentionally light — can be added if desired
 }
 
 /* Data table */
@@ -491,14 +533,9 @@ function updateDataTable(){
 
 /* -----------------------
    Forecasting (lightweight)
-   - compute 90-day forecast using simple ETS-like smoothing + linear trend extrapolation
-   - returns forecast array of {date, y}
    ----------------------- */
 function computeSimpleForecast(series, days=90){
-  // series: [{date:Date,y:Number}] sorted ascending
   if(!series.length) return [];
-  // Use multiplicative smoothing + linear regression to get trend
-  // Step 1: compute simple moving average to smooth
   const prices = series.map(s=>s.y);
   const smooth = prices.map((v,i,arr)=>{
     const w=5;
@@ -506,7 +543,6 @@ function computeSimpleForecast(series, days=90){
     const seg=arr.slice(start,i+1);
     return seg.reduce((a,b)=>a+b,0)/seg.length;
   });
-  // Step 2: linear regression on last N points to find slope
   const N = Math.min(60, smooth.length);
   const x = [], y=[];
   for(let i=0;i<N;i++){ x.push(i); y.push(smooth[smooth.length-N+i]); }
@@ -516,25 +552,19 @@ function computeSimpleForecast(series, days=90){
   for(let i=0;i<x.length;i++){ num += (x[i]-xm)*(y[i]-ym); den += (x[i]-xm)*(x[i]-xm); }
   const slope = den === 0 ? 0 : num/den;
   const intercept = ym - slope*xm;
-  // lastDate
   const lastDate = new Date(series[series.length-1].date);
   const forecasts = [];
   for(let d=1; d<=days; d++){
-    const idx = N + d; // continue x index
     const pred = intercept + slope*(x.length-1 + d);
-    // ensure positive
     forecasts.push({ date: new Date(lastDate.getTime() + 24*3600*1000*d), y: Math.max(0, pred) });
   }
   return forecasts;
 }
 
-/* Render forecast chart & strategy */
 function computeForecastAndRender(){
   if(!filteredRows.length){ document.getElementById('strategy-signal').textContent='—'; return; }
-  // prepare series
   const series = filteredRows.map(r=>({date:new Date(r.date), y:r.modalPriceKg}));
   const forecast = computeSimpleForecast(series, 90);
-  // Chart: historical + forecast (dashed)
   const ctx = document.getElementById('forecast-chart').getContext('2d');
   if(forecastChart) forecastChart.destroy();
   const dataHist = series.map(s=>({x:s.date, y:s.y}));
@@ -550,26 +580,26 @@ function computeForecastAndRender(){
     options:{ parsing:false, scales:{ x:{ type:'time', time:{unit:'month'} }, y:{ beginAtZero:false } }, plugins:{ legend:{display:true} } }
   });
 
-  // Strategy: look at last 30-day slope of forecast
   const fvals = forecast.slice(0,14).map(f=>f.y);
-  const sl = (fvals[fvals.length-1] - fvals[0]) / Math.max(1, fvals[0]);
-  const vol = Math.sqrt(filteredRows.map(r=>Math.pow(r.modalPriceKg - (filteredRows.reduce((a,b)=>a+b.modalPriceKg,0)/filteredRows.length),2)).reduce((a,b)=>a+b,0) / Math.max(1,filteredRows.length));
+  const sl = fvals.length>1 ? (fvals[fvals.length-1] - fvals[0]) / Math.max(1, fvals[0]) : 0;
+  const avgAll = filteredRows.reduce((a,b)=>a+b.modalPriceKg,0)/Math.max(1,filteredRows.length);
+  const vol = Math.sqrt(filteredRows.map(r=>Math.pow(r.modalPriceKg - avgAll,2)).reduce((a,b)=>a+b,0) / Math.max(1,filteredRows.length));
   const confidence = Math.max(0, Math.min(100, 100 - vol*200));
   document.getElementById('forecast-confidence').textContent = `${Math.round(confidence)}%`;
 
   let signal = 'Wait', detail='Prices are forecast to be stable or slightly decrease.';
-  if(sl > 0.10) { signal='Buy', detail='Prices are trending up — consider selling later for higher price or hold.'; document.getElementById('strategy-signal').parentElement.className='strategy-card strategy-buy card'; }
-  else if(sl < -0.05) { signal='Sell', detail='Prices are trending down — consider selling soon.'; document.getElementById('strategy-signal').parentElement.className='strategy-card strategy-sell card'; }
-  else { signal='Wait', detail='No strong upward trend — hold for better selling price if storage allows.'; document.getElementById('strategy-signal').parentElement.className='strategy-card strategy-wait card'; }
+  const signalElParent = document.getElementById('strategy-signal').parentElement;
+  if(sl > 0.10) { signal='Buy'; detail='Prices are trending up — consider holding to sell later.'; signalElParent.className='strategy-card strategy-buy card'; }
+  else if(sl < -0.05) { signal='Sell'; detail='Prices are trending down — consider selling soon.'; signalElParent.className='strategy-card strategy-sell card'; }
+  else { signal='Wait'; detail='No strong upward trend — hold for better selling price if storage allows.'; signalElParent.className='strategy-card strategy-wait card'; }
   document.getElementById('strategy-signal').textContent = signal;
   document.getElementById('strategy-detail').textContent = detail;
-  // Peak month (basic historical month aggregation)
+
   const monthly = {};
   filteredRows.forEach(r=>{ const m = new Date(r.date).getMonth()+1; monthly[m] = monthly[m] || []; monthly[m].push(r.modalPriceKg); });
   const avgByMonth = Object.keys(monthly).map(k=>({m:parseInt(k), avg: monthly[k].reduce((a,b)=>a+b,0)/monthly[k].length}));
   if(avgByMonth.length){ const peak = avgByMonth.reduce((a,b)=>a.avg > b.avg ? a : b); const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; document.getElementById('peak-month').textContent = months[peak.m-1]; } else document.getElementById('peak-month').textContent='—';
 
-  // prediction outlook: fill with simple narrative and values
   const outlook = document.getElementById('prediction-outlook');
   outlook.innerHTML = `<div class="card"><strong>Forecast summary:</strong> Next 90 days trend ${(sl>0.05)?'positive':(sl<-0.05?'negative':'neutral')}. Average forecast price (first 30d): ₹${(forecast.slice(0,30).reduce((a,b)=>a+b.y,0)/Math.max(1,forecast.slice(0,30).length)).toFixed(2)}</div>`;
 }
@@ -602,10 +632,8 @@ function generateTopCropsUI(){
 
 function showRecommendationsModal(){
   const recs = generateRecommendations(3);
-  // show as modal-less overlay: fill top-crops container quickly
   if(!recs.length){ alert('No recommendations'); return; }
   generateTopCropsUI();
-  // ensure top-crops tab visible
   document.getElementById('tab-top-crops').click();
 }
 
@@ -684,7 +712,7 @@ async function handleFileImport(file){
     }
     alert('Imported successfully');
     showDashboardAfterLoad();
-  } catch(e){ console.error(e); alert('Import failed: ' + e.message); }
+  } catch(e){ console.error(e); alert('Import failed: ' + (e.message||e)); }
 }
 
 /* -----------------------
@@ -693,7 +721,7 @@ async function handleFileImport(file){
 function showDashboardAfterLoad(){ document.getElementById('start-screen').classList.add('hidden'); document.getElementById('main-dashboard').classList.remove('hidden'); refreshAllUI(); }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // start screen visible by default
+  // show start screen
   document.getElementById('start-screen').classList.remove('hidden');
   document.getElementById('main-dashboard').classList.add('hidden');
 
@@ -789,17 +817,29 @@ function openAddModal(){
   };
 }
 
-/* Close everything gracefully when needed */
+/* remove market */
+function removeMarket(i){ markets.splice(i,1); saveToLocal().catch(()=>{}); populateMarketsSelectAndTable(); refreshAllUI(); }
+function populateMarketsSelectAndTable(){ populateMarketSelect(); populateMarketsTable(); }
 
 </script>
 
-<!-- service worker registration: place before closing body -->
+<!-- service worker registration (single robust registration) -->
 <script>
 if ('serviceWorker' in navigator) {
-  // Register at site root. If your site is hosted under a sub-path e.g. /Smart_FarmHer/, adjust the path to '/Smart_FarmHer/service-worker.js'
-  navigator.serviceWorker.register('/Smart_FarmHer/service-worker.js').then(reg=>{
-    console.log('Service worker registered', reg);
-  }).catch(err=>console.warn('SW registration failed', err));
+  const swPath = location.pathname.startsWith('/Smart_FarmHer') ? '/Smart_FarmHer/service-worker.js' : '/service-worker.js';
+  navigator.serviceWorker.register(swPath, { scope: location.pathname.startsWith('/Smart_FarmHer') ? '/Smart_FarmHer/' : '/' })
+    .then(reg => {
+      console.log('Service worker registered:', reg);
+      reg.addEventListener('updatefound', () => {
+        const newW = reg.installing;
+        newW.addEventListener('statechange', () => {
+          if (newW.state === 'installed' && navigator.serviceWorker.controller) {
+            console.log('New content available; you may want to refresh.');
+          }
+        });
+      });
+    })
+    .catch(err => console.warn('SW registration failed:', err));
 }
 </script>
 
