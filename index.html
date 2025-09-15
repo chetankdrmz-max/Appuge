@@ -267,306 +267,158 @@
 </div>
 
 <script>
-/* ---------- Full App JS (same logic as earlier assistant-provided tool) ---------- */
-/* For brevity here: this script contains the full app logic:
-   - localStorage persistence
-   - CSV/XLSX import (PapaParse / SheetJS)
-   - Add / edit records modal
-   - Manage markets modal (lat/lon)
-   - Charts (Chart.js)
-   - Forecast (simple model)
-   - Open-Meteo 7-day weather fetch
-   - Export CSV
-   This block below is the complete same JS used before. For clarity it is included verbatim:
-*/
+/* ========== Persistence with localStorage fallback to IndexedDB ========== */
 
 const STORAGE_KEY = 'agri_dashboard_store_v1';
-const preloadedCSVData = `Date,Market,Commodity,Variety,District,Min_Price_Kg,Max_Price_Kg,Modal_Price_Kg,Category
-2023-01-01,Mysore (Bandipalya),Beans,Beans (Whole),Mysore,23,25,24,Vegetable
-2023-01-05,Mysore (Bandipalya),Apple,Kasmir/Shimla - II,Mysore,50,56.82,55,Fruit
-2025-07-29,Mysore (Bandipalya),Water Melon,Water Melon,Mysore,15,16,15,Fruit`;
+const IDB_DBNAME = 'agri_analyst_db_v1';
+const IDB_STORE = 'store';
 
-let commodityRows = [];
-let markets = [];
-let currentCommodity = '';
-let currentVariety = 'All';
-let currentMarket = '';
-let filteredRows = [];
-let priceChart = null, distributionChart = null, forecastChart = null;
-
-function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,9); }
-function safeFloat(v){ return v===undefined||v===''?NaN:parseFloat(String(v).replace(/,/g,'')); }
-function fmtDate(d){ try { return new Date(d).toLocaleDateString(); } catch(e){ return d; } }
-function dateISO(d) { return new Date(d).toISOString().split('T')[0]; }
-
-function saveToLocal(){ const store={rows:commodityRows,markets:markets}; localStorage.setItem(STORAGE_KEY,JSON.stringify(store)); }
-function loadFromLocal(){ try{ const raw=localStorage.getItem(STORAGE_KEY); if(!raw) return false; const obj=JSON.parse(raw); commodityRows=obj.rows||[]; markets=obj.markets||[]; return true; } catch(e){console.error(e); return false;} }
-function clearLocal(){ if(confirm('Clear all saved data from this browser? This cannot be undone.')){ localStorage.removeItem(STORAGE_KEY); commodityRows=[]; markets=[]; refreshAllUI(); alert('Local save cleared.'); } }
-
-function parseCSVText(text){ return new Promise((resolve)=>{ try{ const result=Papa.parse(text,{header:true,skipEmptyLines:true}); resolve(result.data);}catch(e){resolve([]);} }); }
-function readFileToRows(file){ return new Promise((resolve,reject)=>{ const name=(file&&file.name)?file.name.toLowerCase():''; if(name.endsWith('.csv')||file.type==='text/csv'){ const reader=new FileReader(); reader.onload=()=>parseCSVText(reader.result).then(rows=>resolve(rows)); reader.onerror=reject; reader.readAsText(file); return; } const reader=new FileReader(); reader.onload=(e)=>{ try{ const data=new Uint8Array(e.target.result); const workbook=XLSX.read(data,{type:'array'}); const sheet=workbook.Sheets[workbook.SheetNames[0]]; const rows=XLSX.utils.sheet_to_json(sheet,{defval:''}); resolve(rows);}catch(err){reject(err);} }; reader.onerror=reject; reader.readAsArrayBuffer(file); }); }
-
-function addRowsFromParsed(rows){
-  rows.forEach(r=>{
-    const date = r.Date || r.date || r.DATE || r['Date'] || '';
-    const market = r.Market || r.market || r.MARKET || r['Market'] || currentMarket || '';
-    const commodity = r.Commodity || r.commodity || r['Commodity'] || '';
-    const variety = r.Variety || r.variety || r['Variety'] || '';
-    const district = r.District || r.district || '';
-    const min = safeFloat(r.Min_Price_Kg || r.Min_Price || r.Min_Price_KG || r.minPriceKg || r['Min_Price_Kg']);
-    const max = safeFloat(r.Max_Price_Kg || r.Max_Price || r.Max_Price_KG || r.maxPriceKg || r['Max_Price_Kg']);
-    const modal = safeFloat(r.Modal_Price_Kg || r.Modal_Price || r.modalPriceKg || r['Modal_Price_Kg']);
-    const category = r.Category || r.category || '';
-    if(!commodity || !date) return;
-    commodityRows.push({ id: uid(), date: new Date(date).toISOString(), market: market||'', commodity: String(commodity).trim(), variety: String(variety).trim(), district: String(district).trim(), minPriceKg: isNaN(min)?0:min, maxPriceKg: isNaN(max)?0:max, modalPriceKg: isNaN(modal)?0:modal, category: category || (commodity && defaultCategoryFor(commodity)) || 'Other' });
+/* --- IndexedDB helper --- */
+function openIDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_DBNAME, 1);
+    req.onupgradeneeded = evt => {
+      const db = evt.target.result;
+      if (!db.objectStoreNames.contains(IDB_STORE)) {
+        db.createObjectStore(IDB_STORE);
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
   });
-  saveToLocal();
-  refreshAllUI();
 }
 
-function defaultCategoryFor(commodity){
-  const c=String(commodity||'').toLowerCase();
-  if(c.includes('apple')||c.includes('banana')||c.includes('mango')||c.includes('grape')) return 'Fruit';
-  if(c.includes('bean')||c.includes('onion')||c.includes('potato')||c.includes('tomato')) return 'Vegetable';
-  if(c.includes('dal')||c.includes('gram')||c.includes('arhar')||c.includes('tur')) return 'Pulse';
-  return 'Other';
-}
-
-function populateMarketSelect(){
-  const sel=document.getElementById('market-select'); sel.innerHTML='';
-  if(markets.length===0){ sel.innerHTML='<option value="">(no markets yet)</option>'; return; }
-  markets.forEach(m=>{ const opt=document.createElement('option'); opt.value=m.name; opt.textContent=m.name; sel.appendChild(opt); });
-  if(!currentMarket) currentMarket = markets[0]?markets[0].name:'';
-  sel.value = currentMarket || (markets[0] && markets[0].name) || '';
-}
-function populateCategoryFilter(){
-  const cats=[...new Set(commodityRows.map(r=>r.category||'Other'))].sort();
-  const cf=document.getElementById('category-filter'); cf.innerHTML='<option value="All">All</option>';
-  cats.forEach(c=>{ const opt=document.createElement('option'); opt.value=c; opt.textContent=c; cf.appendChild(opt);});
-}
-function populateCommodityList(){
-  const selCat=document.getElementById('category-filter').value||'All';
-  const container=document.getElementById('commodity-list');
-  const set=new Set(commodityRows.filter(r=>selCat==='All'||r.category===selCat).map(r=>r.commodity));
-  const list=Array.from(set).sort();
-  container.innerHTML='';
-  list.forEach(c=>{
-    const btn=document.createElement('button'); btn.className='w-full text-left p-1 text-sm hover:bg-slate-100'; btn.textContent=c;
-    btn.onclick=()=>{ currentCommodity=c; container.querySelectorAll('button').forEach(b=>b.classList.remove('bg-emerald-50')); btn.classList.add('bg-emerald-50'); populateVarietyFilter(); applyFilters(); };
-    container.appendChild(btn);
+async function idbPut(key, value) {
+  const db = await openIDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put(value, key);
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => reject(tx.error);
   });
-  if(list.length>0 && !currentCommodity){ currentCommodity=list[0]; container.querySelector('button').classList.add('bg-emerald-50'); }
-  populateVarietyFilter();
 }
 
-function populateVarietyFilter(){
-  const vsel=document.getElementById('variety-filter'); vsel.innerHTML='<option value="All">All</option>';
-  if(!currentCommodity) return;
-  const set=new Set(commodityRows.filter(r=>r.commodity===currentCommodity).map(r=>r.variety||''));
-  Array.from(set).sort().forEach(v=>{ const opt=document.createElement('option'); opt.value=v; opt.textContent=v||'(unknown)'; vsel.appendChild(opt); });
-  vsel.value = currentVariety || 'All';
+async function idbGet(key) {
+  const db = await openIDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, 'readonly');
+    const req = tx.objectStore(IDB_STORE).get(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
 }
 
-function applyFilters(){
-  const start=document.getElementById('start-date').value; const end=document.getElementById('end-date').value;
-  const selCat=document.getElementById('category-filter').value; const varSel=document.getElementById('variety-filter').value||'All';
-  currentMarket = document.getElementById('market-select').value || currentMarket || '';
-  currentVariety = varSel;
-  let sDate = start ? new Date(start) : new Date('1900-01-01'); let eDate = end ? new Date(end) : new Date('2100-01-01'); eDate.setHours(23,59,59,999);
-  filteredRows = commodityRows.filter(r=>{
-    if(selCat!=='All' && r.category!==selCat) return false;
-    if(currentCommodity && r.commodity!==currentCommodity) return false;
-    if(varSel!=='All' && (r.variety||'')!==varSel) return false;
-    if(currentMarket && r.market && r.market!==currentMarket) return false;
-    const d=new Date(r.date); return d>=sDate && d<=eDate;
-  }).sort((a,b)=>new Date(a.date)-new Date(b.date));
-  refreshDashboardUI();
+async function idbDelete(key) {
+  const db = await openIDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    const req = tx.objectStore(IDB_STORE).delete(key);
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => reject(tx.error);
+  });
 }
 
-function resetFilters(){ document.getElementById('category-filter').value='All'; currentCommodity=''; currentVariety='All'; document.getElementById('start-date').value=''; document.getElementById('end-date').value=''; populateCommodityList(); applyFilters(); }
+/* --- saveToLocal: tries localStorage, falls back to IndexedDB --- */
+async function saveToLocal() {
+  const storeObj = { rows: commodityRows || [], markets: markets || [] };
+  try {
+    // try localStorage first (fast)
+    const json = JSON.stringify(storeObj);
+    localStorage.setItem(STORAGE_KEY, json);
+    // clear any legacy IDB entry (optional)
+    try { await idbDelete(STORAGE_KEY); } catch(e){/* ignore */ }
+    console.log('Saved to localStorage (small).');
+    return { method: 'localStorage' };
+  } catch (err) {
+    console.warn('localStorage save failed, falling back to IndexedDB:', err);
+    try {
+      await idbPut(STORAGE_KEY, storeObj);
+      console.log('Saved to IndexedDB.');
+      // Inform user (friendly alert)
+      alert('Note: Data is large and was saved to your browser storage (IndexedDB) instead of localStorage. This supports larger datasets.');
+      return { method: 'indexedDB' };
+    } catch (idbErr) {
+      console.error('Failed to save to IndexedDB:', idbErr);
+      alert('Failed to save data to browser storage. Try exporting smaller CSV or clear space in browser storage.');
+      throw idbErr;
+    }
+  }
+}
 
-function refreshAllUI(){ populateMarketSelect(); populateCategoryFilter(); populateCommodityList(); populateVarietyFilter(); applyFilters(); refreshMarketsTable(); }
-
-function refreshMarketsTable(){ const tbody=document.getElementById('markets-table-body'); tbody.innerHTML=''; markets.forEach((m,i)=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td class="p-2 text-sm">${m.name}</td><td class="p-2 text-sm">${m.lat||''}</td><td class="p-2 text-sm">${m.lon||''}</td><td class="p-2"><button data-i="${i}" class="del-market text-red-500 text-xs">Delete</button></td>`; tbody.appendChild(tr); }); tbody.querySelectorAll('.del-market').forEach(btn=>btn.addEventListener('click',()=>{ const i=+btn.dataset.i; if(confirm('Delete market "'+markets[i].name+'"?')){ markets.splice(i,1); saveToLocal(); refreshAllUI(); } })); }
-
-function refreshDashboardUI(){
-  const snapshotBody=document.getElementById('snapshot-table-body');
-  if(!commodityRows.length){ snapshotBody.innerHTML='<tr><td class="p-2" colspan="6">No data</td></tr>'; document.getElementById('snapshot-count').textContent='0'; } else {
-    const maxTs=Math.max(...commodityRows.map(r=>new Date(r.date).getTime()));
-    const maxDay=new Date(maxTs).toISOString().split('T')[0];
-    const snapshot=commodityRows.filter(r=>new Date(r.date).toISOString().split('T')[0]===maxDay);
-    snapshotBody.innerHTML = snapshot.map(r=>`<tr class="hover:bg-slate-50"><td class="p-2">${escapeHtml(r.market)}</td><td class="p-2">${escapeHtml(r.commodity)}</td><td class="p-2">${escapeHtml(r.variety)}</td><td class="p-2">₹${r.modalPriceKg.toFixed(2)}</td><td class="p-2">₹${r.minPriceKg.toFixed(2)}</td><td class="p-2">₹${r.maxPriceKg.toFixed(2)}</td></tr>`).join('');
-    document.getElementById('snapshot-count').textContent = snapshot.length;
-    document.getElementById('snapshot-date').textContent = '(' + new Date(maxTs).toLocaleDateString() + ')';
+/* --- loadFromLocal: tries localStorage then IndexedDB --- */
+function loadFromLocal() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      commodityRows = parsed.rows || [];
+      markets = parsed.markets || [];
+      console.log('Loaded data from localStorage.');
+      return true;
+    }
+  } catch (e) {
+    console.warn('Error reading localStorage, will try IndexedDB:', e);
   }
 
-  const cards=document.getElementById('summary-cards');
-  if(!filteredRows.length){ cards.innerHTML = `<div class="col-span-full bg-white p-4 rounded shadow">No data for selected filters</div>`; } else {
-    const latest=filteredRows[filteredRows.length-1];
-    const prev=filteredRows.length>1?filteredRows[filteredRows.length-2]:latest;
-    const prices=filteredRows.map(r=>r.modalPriceKg);
-    const avg = prices.reduce((a,b)=>a+b,0)/prices.length;
-    const min = Math.min(...prices);
-    const max = Math.max(...prices);
-    const change = prev && prev.modalPriceKg ? (latest.modalPriceKg - prev.modalPriceKg) / Math.max(1, prev.modalPriceKg) * 100 : 0;
-    cards.innerHTML = `
-      <div class="bg-white p-4 rounded shadow">
-        <div class="text-xs text-slate-500">Latest Modal</div>
-        <div class="text-xl font-bold">₹${latest.modalPriceKg.toFixed(2)}</div>
-        <div class="text-xs ${change>=0?'text-green-500':'text-red-500'}">${change.toFixed(2)}%</div>
-      </div>
-      <div class="bg-white p-4 rounded shadow">
-        <div class="text-xs text-slate-500">Average</div>
-        <div class="text-xl font-bold">₹${avg.toFixed(2)}</div>
-        <div class="text-xs text-slate-400">Period avg</div>
-      </div>
-      <div class="bg-white p-4 rounded shadow">
-        <div class="text-xs text-slate-500">Lowest</div>
-        <div class="text-xl font-bold">₹${min.toFixed(2)}</div>
-        <div class="text-xs text-slate-400">In period</div>
-      </div>
-      <div class="bg-white p-4 rounded shadow">
-        <div class="text-xs text-slate-500">Highest</div>
-        <div class="text-xl font-bold">₹${max.toFixed(2)}</div>
-        <div class="text-xs text-slate-400">In period</div>
-      </div>
-    `;
-  }
-  updatePriceChart();
-  updateDistributionChart();
-
-  const table = document.getElementById('price-table-body');
-  const source = filteredRows.length ? filteredRows : commodityRows;
-  const lastRows = source.slice(-20).reverse();
-  table.innerHTML = lastRows.map(r=>`<tr class="hover:bg-slate-50 cursor-pointer" data-id="${r.id}"><td class="p-2">${fmtDate(r.date)}</td><td class="p-2">${escapeHtml(r.market)}</td><td class="p-2">${escapeHtml(r.commodity)}</td><td class="p-2">${escapeHtml(r.variety)}</td><td class="p-2">₹${r.modalPriceKg.toFixed(2)}</td><td class="p-2">₹${r.minPriceKg.toFixed(2)}</td><td class="p-2">₹${r.maxPriceKg.toFixed(2)}</td></tr>`).join('');
-  table.querySelectorAll('tr[data-id]').forEach(tr=>tr.addEventListener('click',()=>openEditRecord(tr.dataset.id)));
-}
-
-function updatePriceChart(){ const ctx=document.getElementById('price-chart').getContext('2d'); if(priceChart) priceChart.destroy(); if(!filteredRows.length) return; const modalData = filteredRows.map(r=>({ x: new Date(r.date), y: r.modalPriceKg })); priceChart = new Chart(ctx,{ type:'line', data:{ datasets:[{ label:'Modal Price', data:modalData, borderColor:'rgb(16,185,129)', tension:0.12 }] }, options:{ parsing:false, responsive:true, maintainAspectRatio:false, scales:{ x:{ type:'time' }, y:{ title:{display:true,text:'₹/kg'} } } } }); }
-
-function updateDistributionChart(){ const ctx=document.getElementById('distribution-chart').getContext('2d'); if(distributionChart) distributionChart.destroy(); if(!filteredRows.length) return; const prices=filteredRows.map(r=>r.modalPriceKg); const min=Math.min(...prices), max=Math.max(...prices); if(min===max) return; const bins=Math.min(8, Math.max(3, Math.floor(Math.sqrt(prices.length)))); const binSize=(max-min)/bins; const counts=new Array(bins).fill(0); for(const p of prices){ const idx=Math.min(bins-1, Math.floor((p-min)/binSize)); counts[idx]++; } const labels=counts.map((c,i)=>`₹${Math.round(min + i*binSize)}-₹${Math.round(min + (i+1)*binSize)}`); distributionChart = new Chart(ctx, { type:'bar', data:{ labels, datasets:[{ label:'Frequency', data:counts }] }, options:{ responsive:true, maintainAspectRatio:false } }); }
-
-function generateForecastForSelection(){
-  const rows = filteredRows.length ? filteredRows : commodityRows.filter(r => (!currentCommodity || r.commodity===currentCommodity) && (!currentMarket || r.market===currentMarket));
-  if(!rows.length){ document.getElementById('prediction-outlook').innerHTML = '<div class="bg-white p-3 rounded">No data to forecast.</div>'; return; }
-  const data = rows.sort((a,b)=>new Date(a.date)-new Date(b.date)).map(r=>({ t: new Date(r.date), y: r.modalPriceKg }));
-  if(data.length < 8){ document.getElementById('prediction-outlook').innerHTML = '<div class="bg-white p-3 rounded">Need more data (min 8 rows).</div>'; return; }
-  const xs = data.map(d=>d.t.getTime()); const ys = data.map(d=>d.y); const n = xs.length; const meanX = xs.reduce((a,b)=>a+b,0)/n, meanY = ys.reduce((a,b)=>a+b,0)/n; let num=0, den=0; for(let i=0;i<n;i++){ num += (xs[i]-meanX)*(ys[i]-meanY); den += (xs[i]-meanX)*(xs[i]-meanX); } const slopePerMs = den===0?0:num/den; const slopePerDay = slopePerMs * 1000*60*60*24;
-  const months = Array.from({length:12}, ()=>({sum:0,count:0})); for(const r of rows){ const m=new Date(r.date).getMonth(); months[m].sum += r.modalPriceKg; months[m].count++; } const monthAvg = months.map(m=> m.count ? m.sum/m.count : 0 ); const overall = monthAvg.reduce((a,b)=>a+b,0)/12 || 1;
-  const lastDate = new Date(rows[rows.length-1].date); const lastPrice = rows[rows.length-1].modalPriceKg;
-  const forecast = []; for(let i=1;i<=90;i++){ const nd=new Date(lastDate); nd.setDate(nd.getDate()+i); const linear = lastPrice + slopePerDay * i; const seasonAdj = (monthAvg[nd.getMonth()] || overall) / overall; const val = Math.max(0, linear * seasonAdj); forecast.push({date:nd, modalPriceKg:val}); }
-  const ctx=document.getElementById('forecast-chart').getContext('2d'); if(forecastChart) forecastChart.destroy(); forecastChart = new Chart(ctx,{ type:'line', data:{ datasets:[ { label:'Historical', data: data.map(d=>({x:d.t,y:d.y})), borderColor:'rgb(34,197,94)', pointRadius:0, tension:0.12 }, { label:'Forecast (90d)', data: forecast.map(f=>({x:f.date,y:f.modalPriceKg})), borderColor:'rgb(255,99,132)', pointRadius:0, borderDash:[6,4], tension:0.12 } ] }, options:{ parsing:false, responsive:true, maintainAspectRatio:false, scales:{ x:{type:'time'}, y:{ beginAtZero:false } } } });
-
-  const trend = forecast[forecast.length-1].modalPriceKg - forecast[0].modalPriceKg;
-  const cur = data[data.length-1].y;
-  const histAvg = ys.reduce((a,b)=>a+b,0)/ys.length;
-  let signal='Wait', color='yellow', reason='Prices look stable.';
-  if(trend>0 && cur>histAvg){ signal='Grow Now'; color='green'; reason='Prices are above average and forecasted to rise.'; }
-  else if(trend>0){ signal='Consider Growing'; color='green'; reason='Forecast shows a rising trend.'; }
-  else if(trend<0 && cur<histAvg){ signal='Avoid'; color='red'; reason='Prices below average and forecast shows decline.'; }
-
-  document.getElementById('prediction-outlook').innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3"><div class="bg-${color}-50 p-3 rounded border"> <div class="text-xs text-${color}-600 font-bold">Signal</div><div class="text-xl font-bold">${signal}</div><div class="text-sm text-slate-600 mt-1">${reason}</div></div><div class="bg-slate-50 p-3 rounded border"><div class="text-xs text-slate-600 font-bold">Current price</div><div class="text-xl font-bold">₹${cur.toFixed(2)}</div><div class="text-sm text-slate-600 mt-1">Historical avg ₹${histAvg.toFixed(2)}</div></div></div>`;
-}
-
-async function fetchWeatherForMarket(marketName){
-  const market = markets.find(m=>m.name===marketName);
-  if(!market || !market.lat || !market.lon){ document.getElementById('weather-container').innerHTML = '<div class="text-sm text-slate-500">No location coordinates for this market. Add lat/lon in Manage Markets.</div>'; return; }
-  const lat = market.lat; const lon = market.lon;
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto&forecast_days=7`;
-  try{
-    const res = await fetch(url); const json = await res.json();
-    if(!json || !json.daily){ document.getElementById('weather-container').innerHTML = '<div class="text-sm text-red-500">Weather fetch failed</div>'; return; }
-    const days = json.daily.time.map((t,i)=>({ date:t, tmin: json.daily.temperature_2m_min[i], tmax: json.daily.temperature_2m_max[i], precip: json.daily.precipitation_sum[i] }));
-    document.getElementById('weather-container').innerHTML = days.map(d=>`<div class="flex justify-between items-center border-b py-2"><div><div class="text-sm font-semibold">${new Date(d.date).toLocaleDateString()}</div><div class="text-xs text-slate-500">Min ${d.tmin}°C • Max ${d.tmax}°C</div></div><div class="text-sm ${d.precip>0 ? 'text-blue-600':'text-slate-500'}">${d.precip} mm</div></div>`).join('');
-  } catch(e){ console.error('weather error', e); document.getElementById('weather-container').innerHTML = '<div class="text-sm text-red-500">Weather fetch failed</div>'; }
-}
-
-function computeRecommendations(){
-  const names = [...new Set(commodityRows.map(r=>r.commodity))];
-  const recs=[];
-  names.forEach(name=>{
-    const data = commodityRows.filter(r=>r.commodity===name).sort((a,b)=>new Date(a.date)-new Date(b.date));
-    if(data.length < 8) return;
-    const recent = data.slice(-30); const prices = recent.map(r=>r.modalPriceKg); const avg = prices.reduce((a,b)=>a+b,0)/prices.length; const change = (prices[prices.length-1] - prices[0]) / (prices[0] || 1) * 100; const variance = prices.reduce((s,p)=>s+Math.pow(p-avg,2),0)/prices.length; const volatility = Math.sqrt(variance) / (avg || 1); const score = (1 + (change/100)) / (volatility + 0.08);
-    recs.push({ commodity: name, avgPrice: avg, priceChange: change, volatility, score });
-  });
-  return recs.sort((a,b)=>b.score-a.score);
-}
-
-function showQuickRecommendations(){
-  const recs = computeRecommendations().slice(0,3); const container=document.getElementById('recommendations-list');
-  container.innerHTML = recs.map((r,i)=>`<div class="p-3 bg-slate-50 rounded"><div class="flex justify-between items-start"><div><div class="text-sm text-slate-500">#${i+1}</div><div class="text-lg font-bold">${escapeHtml(r.commodity)}</div></div><div class="text-xs text-slate-500">Risk: ${r.volatility<0.12?'Low':r.volatility<0.25?'Med':'High'}</div></div><div class="text-xs mt-2">Avg: ₹${r.avgPrice.toFixed(2)}/kg</div><div class="text-xs ${r.priceChange>=0?'text-green-600':'text-red-600'} mt-1">${r.priceChange.toFixed(2)}% (30d)</div></div>`).join('');
-  document.getElementById('modal-recommendations').classList.remove('hidden');
-}
-
-function openAddRecord(){
-  const recMarket=document.getElementById('rec-market'); recMarket.innerHTML = markets.length ? markets.map(m=>`<option value="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>`).join('') : '<option value="">(no market)</option>';
-  document.getElementById('rec-date').value = dateISO(new Date()); document.getElementById('rec-commodity').value=''; document.getElementById('rec-variety').value=''; document.getElementById('rec-category').value=''; document.getElementById('rec-district').value=''; document.getElementById('rec-modal').value=''; document.getElementById('rec-min').value=''; document.getElementById('rec-max').value=''; document.getElementById('delete-record-btn').classList.add('hidden'); document.getElementById('modal-add-record').classList.remove('hidden'); document.getElementById('modal-add-record').dataset.editId = '';
-}
-
-function openEditRecord(id){
-  const row = commodityRows.find(r=>r.id===id); if(!row){ alert('Record not found'); return; }
-  const recMarket=document.getElementById('rec-market'); recMarket.innerHTML = markets.length ? markets.map(m=>`<option value="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>`).join('') : '<option value="">(no market)</option>';
-  document.getElementById('rec-date').value = dateISO(row.date); document.getElementById('rec-market').value = row.market || ''; document.getElementById('rec-commodity').value = row.commodity; document.getElementById('rec-variety').value = row.variety; document.getElementById('rec-category').value = row.category; document.getElementById('rec-district').value = row.district; document.getElementById('rec-modal').value = row.modalPriceKg; document.getElementById('rec-min').value = row.minPriceKg; document.getElementById('rec-max').value = row.maxPriceKg; document.getElementById('delete-record-btn').classList.remove('hidden'); document.getElementById('modal-add-record').classList.remove('hidden'); document.getElementById('modal-add-record').dataset.editId = id;
-}
-
-document.getElementById('record-form').addEventListener('submit',(e)=>{ e.preventDefault(); const id = document.getElementById('modal-add-record').dataset.editId; const row = { id: id || uid(), date: new Date(document.getElementById('rec-date').value).toISOString(), market: document.getElementById('rec-market').value || '', commodity: document.getElementById('rec-commodity').value.trim(), variety: document.getElementById('rec-variety').value.trim(), district: document.getElementById('rec-district').value.trim(), minPriceKg: safeFloat(document.getElementById('rec-min').value) || 0, maxPriceKg: safeFloat(document.getElementById('rec-max').value) || 0, modalPriceKg: safeFloat(document.getElementById('rec-modal').value) || 0, category: document.getElementById('rec-category').value || defaultCategoryFor(document.getElementById('rec-commodity').value) }; if(!row.commodity || !row.date){ alert('Date and commodity are required'); return; } if(id){ const idx=commodityRows.findIndex(r=>r.id===id); if(idx>=0) commodityRows[idx]=row; } else { commodityRows.push(row); } saveToLocal(); document.getElementById('modal-add-record').classList.add('hidden'); refreshAllUI(); });
-
-document.getElementById('delete-record-btn').addEventListener('click', ()=>{ const id=document.getElementById('modal-add-record').dataset.editId; if(!id) return; if(!confirm('Delete this record?')) return; commodityRows = commodityRows.filter(r=>r.id!==id); saveToLocal(); document.getElementById('modal-add-record').classList.add('hidden'); refreshAllUI(); });
-
-document.getElementById('add-market-btn').addEventListener('click', ()=>{ const name=document.getElementById('market-name').value.trim(); const lat=document.getElementById('market-lat').value.trim(); const lon=document.getElementById('market-lon').value.trim(); if(!name){ alert('Market name required'); return; } markets.push({ name, lat: lat?parseFloat(lat):'', lon: lon?parseFloat(lon):'' }); saveToLocal(); refreshMarketsTable(); populateMarketSelect(); document.getElementById('market-name').value=''; document.getElementById('market-lat').value=''; document.getElementById('market-lon').value=''; });
-
-document.getElementById('start-analysis-btn').addEventListener('click', async () => {
-  const hadSaved = loadFromLocal();
-  if(!hadSaved){
-    const parsed = await parseCSVText(preloadedCSVData);
-    if(parsed && parsed.length){ commodityRows=[]; addRowsFromParsed(parsed); } else { alert('No preloaded data found.'); }
-  } else { refreshAllUI(); }
-  document.getElementById('start-screen').classList.add('hidden'); document.getElementById('main-dashboard').classList.remove('hidden');
-});
-document.getElementById('load-local-btn').addEventListener('click', ()=>{ if(!loadFromLocal()){ alert('No saved data in this browser.'); return; } document.getElementById('start-screen').classList.add('hidden'); document.getElementById('main-dashboard').classList.remove('hidden'); refreshAllUI(); });
-
-document.getElementById('file-input').addEventListener('change',(e)=>{ const f=e.target.files[0]; if(!f) return; readFileToRows(f).then(rows=>{ if(!rows||!rows.length){ alert('No rows parsed from file'); return; } addRowsFromParsed(rows); const marketNames=[...new Set(rows.map(r=> r.Market || r.market || '').filter(Boolean))]; for(const m of marketNames) if(!markets.some(x=>x.name===m)) markets.push({ name: m, lat:'', lon:'' }); saveToLocal(); refreshAllUI(); alert('Imported '+rows.length+' rows.'); }).catch(err=>alert('Import error: '+err.message)); });
-
-document.getElementById('import-csv-btn').addEventListener('click', ()=>document.getElementById('file-input').click());
-document.getElementById('export-all-btn').addEventListener('click', ()=>{ if(!commodityRows.length){ alert('No data to export'); return; } const headers=['Date','Market','Commodity','Variety','District','Min_Price_Kg','Max_Price_Kg','Modal_Price_Kg','Category']; const rows = commodityRows.map(r=>[ r.date.split('T')[0], r.market, r.commodity, r.variety, r.district, r.minPriceKg, r.maxPriceKg, r.modalPriceKg, r.category ]); const csv = [headers.join(','), ...rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(','))].join('\n'); const blob=new Blob([csv], {type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='agri_data_export.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); });
-
-document.getElementById('clear-storage-btn').addEventListener('click', clearLocal);
-document.getElementById('market-select').addEventListener('change', (e)=>{ currentMarket=e.target.value; applyFilters(); });
-document.getElementById('category-filter').addEventListener('change', ()=>{ populateCommodityList(); applyFilters(); });
-document.getElementById('variety-filter').addEventListener('change', ()=>{ currentVariety=document.getElementById('variety-filter').value; applyFilters(); });
-document.getElementById('apply-filters').addEventListener('click', applyFilters);
-document.getElementById('reset-filters').addEventListener('click', resetFilters);
-document.getElementById('add-record-btn').addEventListener('click', ()=>openAddRecord());
-document.getElementById('close-add-record').addEventListener('click', ()=>document.getElementById('modal-add-record').classList.add('hidden'));
-document.getElementById('manage-markets-btn').addEventListener('click', ()=>{ document.getElementById('modal-manage-markets').classList.remove('hidden'); refreshMarketsTable(); });
-document.getElementById('close-manage-markets').addEventListener('click', ()=>document.getElementById('modal-manage-markets').classList.add('hidden'));
-document.getElementById('get-recommendations').addEventListener('click', ()=>{ showQuickRecommendations(); });
-document.getElementById('close-recommendations-modal').addEventListener('click', ()=>document.getElementById('modal-recommendations').classList.add('hidden'));
-
-document.getElementById('tab-dashboard').addEventListener('click', ()=>{ document.getElementById('dashboard-content').classList.remove('hidden'); document.getElementById('prediction-content').classList.add('hidden'); document.getElementById('top-crops-content').classList.add('hidden'); document.getElementById('tab-dashboard').classList.add('tab-active'); document.getElementById('tab-prediction').classList.remove('tab-active'); document.getElementById('tab-top-crops').classList.remove('tab-active'); });
-document.getElementById('tab-prediction').addEventListener('click', ()=>{ document.getElementById('dashboard-content').classList.add('hidden'); document.getElementById('prediction-content').classList.remove('hidden'); document.getElementById('top-crops-content').classList.add('hidden'); document.getElementById('tab-dashboard').classList.remove('tab-active'); document.getElementById('tab-prediction').classList.add('tab-active'); document.getElementById('tab-top-crops').classList.remove('tab-active'); generateForecastForSelection(); fetchWeatherForMarket(currentMarket); });
-document.getElementById('tab-top-crops').addEventListener('click', ()=>{ document.getElementById('dashboard-content').classList.add('hidden'); document.getElementById('prediction-content').classList.add('hidden'); document.getElementById('top-crops-content').classList.remove('hidden'); document.getElementById('tab-dashboard').classList.remove('tab-active'); document.getElementById('tab-prediction').classList.remove('tab-active'); document.getElementById('tab-top-crops').classList.add('tab-active'); drawTopCrops(); });
-
-document.getElementById('show-help-btn').addEventListener('click', ()=>{ alert('How to use:\\n\\n1. Load saved data or import CSV/XLSX. \\n2. Add records with "Add Record".\\n3. Manage market lat/lon for weather. \\n4. Use filters on left. \\n5. View predictions (tab) and weather for selected market. \\n6. Export CSV to back up your data.\\n\\nAll data is saved in your browser and does not leave your device.'); });
-
-function drawTopCrops(){ const recs = computeRecommendations().slice(0,10); const container=document.getElementById('top-crops-container'); if(!recs.length){ container.innerHTML='<div class="bg-white p-3 rounded">Not enough data to recommend crops.</div>'; return; } container.innerHTML = recs.map((r,i)=>`<div class="bg-white p-3 rounded shadow flex items-center justify-between"><div><div class="text-sm text-slate-500">#${i+1}</div><div class="text-lg font-bold">${escapeHtml(r.commodity)}</div><div class="text-xs text-slate-500">Avg ₹${r.avgPrice.toFixed(2)} • Trend ${r.priceChange.toFixed(2)}%</div></div><div class="text-right"><div class="text-sm">Score</div><div class="text-xl font-bold text-emerald-600">${r.score.toFixed(2)}</div></div></div>`).join(''); }
-
-(function init(){ const hadSaved = loadFromLocal(); if(!hadSaved){ markets=[{ name:'Mysore (Bandipalya)', lat:12.2958, lon:76.6394 }]; parseCSVText(preloadedCSVData).then(rows=>{ addRowsFromParsed(rows); saveToLocal(); }); } else { document.getElementById('start-screen').classList.remove('hidden'); document.getElementById('main-dashboard').classList.add('hidden'); } })();
-
-function escapeHtml(s=''){ return String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
-
-</script>
-
-<!-- Register service worker for PWA -->
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./service-worker.js').then(() => {
-    console.log('Service worker registered.');
+  // fallback to IndexedDB (async) — return boolean but start async load
+  // We'll return true if IDB has data synchronously? can't; use a blocking async approach:
+  // Implement synchronous wrapper by using async/await above call sites OR make a blocking Promise here.
+  // Simpler: perform synchronous false and initialize async load (then refresh UI when done).
+  idbGet(STORAGE_KEY).then(storeObj => {
+    if (storeObj) {
+      commodityRows = storeObj.rows || [];
+      markets = storeObj.markets || [];
+      console.log('Loaded data from IndexedDB.');
+      refreshAllUI();
+    } else {
+      console.log('No data in IndexedDB.');
+    }
   }).catch(err => {
-    console.warn('Service worker failed:', err);
+    console.warn('Error reading IndexedDB:', err);
+  });
+
+  // indicate whether localStorage had data (we already tried above)
+  return !!localStorage.getItem(STORAGE_KEY);
+}
+
+/* --- clearLocal: clears both storage places --- */
+function clearLocal() {
+  if (!confirm('Clear all saved data from this browser? This cannot be undone.')) return;
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (e) { console.warn(e); }
+  idbDelete(STORAGE_KEY).then(() => {
+    commodityRows = [];
+    markets = [];
+    refreshAllUI();
+    alert('Local save cleared from browser storage.');
+  }).catch(err => {
+    console.warn('Clear IndexedDB failed:', err);
+    commodityRows = [];
+    markets = [];
+    refreshAllUI();
+    alert('Local save cleared (localStorage). IndexedDB clear may have failed; check console.');
   });
 }
+
+/* --- helper: attempt to migrate large localStorage to IndexedDB (optional) --- */
+async function migrateLocalStorageToIDBIfLarge() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    // if the localStorage string length is large (> 1MB), move to IDB
+    if (raw.length > 500000) {
+      const parsed = JSON.parse(raw);
+      await idbPut(STORAGE_KEY, parsed);
+      // optionally remove from localStorage to free quota
+      localStorage.removeItem(STORAGE_KEY);
+      console.log('Migrated large localStorage data to IndexedDB and cleared localStorage.');
+    }
+  } catch (e) { console.warn('Migration check failed:', e); }
+}
+
+/* Call migration on startup (non-blocking) */
+migrateLocalStorageToIDBIfLarge().catch(()=>{/*ignore*/});
 </script>
 
 </body>
