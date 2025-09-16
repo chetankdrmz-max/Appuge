@@ -37,14 +37,13 @@
       background-position:center;
       min-height:100vh;
       display:flex;
-      align-items:flex-start;    /* moved to top */
+      align-items:flex-start;
       justify-content:center;
       padding:40px 20px 80px 20px;
     }
     @media (max-width:768px){ .start-bg{ background-image:url('icons/bg-mobile.png'); } }
     .small-muted { color: var(--muted); font-size:13px; }
-    /* Sidebar layout */
-    .sidebar { min-width: 260px; max-width: 320px; background: #fff; border-right:1px solid rgba(15,23,42,0.04); padding:20px; display:flex; flex-direction:column; gap:14px; height:calc(100vh - 40px); position:sticky; top:20px; }
+    .sidebar { min-width: 260px; max-width: 320px; background: #fff; border-right:1px solid rgba(15,23,42,0.04); padding:20px; display:flex; flex-direction:column; gap:14px; height:calc(100vh - 40px); position:sticky; top:20px; z-index:40; }
     .sidebar .list { max-height:260px; overflow:auto; border:1px solid rgba(15,23,42,0.04); border-radius:8px; padding:6px; }
     .sidebar button.primary { background:var(--emerald); color:white; padding:10px; border-radius:8px; }
     .nav-tabs button.active { border-bottom:3px solid var(--emerald); color:var(--emerald); font-weight:600; }
@@ -57,30 +56,31 @@
     .strategy-wait { background:#fff7ed; border:1px solid #fde68a; color:#92400e; }
     .strategy-sell { background:#fff1f2; border:1px solid #fecaca; color:#7f1d1d; }
     .top-recs { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; }
-    .chart-card { height:360px; }
+    /* fixed, consistent chart card height so graphs don't resize unpredictably */
+    .chart-card { height:320px; display:flex; flex-direction:column; }
+    .chart-card canvas { flex:1; width:100% !important; height:100% !important; }
 
     /* brand icon */
     .brand-icon { width:31px; height:31px; display:inline-block; vertical-align:middle; margin-right:10px; border-radius:6px; object-fit:cover; }
     .brand-title { display:inline-block; vertical-align:middle; line-height:1; }
     .brand-sub { display:block; font-size:13px; color:var(--muted); margin-top:4px; }
 
-    /* hover effect for commodity list */
-    #commodity-list .commodity-btn { width:100%; text-align:left; padding:10px; border:none; background:transparent; display:block; border-radius:8px; }
+    /* commodity list styles */
+    #commodity-list .commodity-btn { width:100%; text-align:left; padding:10px; border:none; background:transparent; display:block; border-radius:8px; font-size:16px; }
     #commodity-list .commodity-btn:hover { background:#f3f4f6; transition: background 120ms ease; cursor:pointer; }
     #commodity-list .commodity-btn.selected { background:var(--emerald); color:#fff; padding-left:12px; padding-right:12px; box-shadow: 0 4px 12px rgba(16,185,129,0.12); }
 
-    /* mobile / off-canvas sidebar */
+    /* mobile off-canvas */
     .mobile-sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:48; opacity:0; transition:opacity .2s ease; }
     .mobile-sidebar-overlay.open { display:block; opacity:1; }
 
     @media (max-width:900px) {
-      /* hide the sidebar by default and make off-canvas */
       .sidebar {
         position:fixed;
-        left:-360px; /* off-canvas */
+        left:-360px;
         top:0;
         height:100vh;
-        z-index:50;
+        z-index:60;
         margin:0;
         border-right:1px solid rgba(15,23,42,0.06);
         box-shadow: 0 20px 40px rgba(2,6,23,0.15);
@@ -89,19 +89,19 @@
       .sidebar.open { left:0; }
       .main-wrap { padding:16px; }
       .chart-card { height:260px; }
-
-      /* show mobile toggle in header */
-      #mobile-sidebar-toggle { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:8px 10px; border-radius:8px; border:1px solid rgba(15,23,42,0.04); background:#fff; cursor:pointer; }
-      #mobile-sidebar-toggle .sr-only{ position:absolute; left:-9999px; }
+      /* mobile toggle: make it clearly visible and fixed so user always sees it */
+      #mobile-sidebar-toggle { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:8px 10px; border-radius:8px; border:1px solid rgba(15,23,42,0.04); background:#fff; cursor:pointer; position:relative; z-index:70; }
+      /* Stack dates vertically on small screens */
+      #date-row { flex-direction:column; }
+      #date-row input { width:100%; }
     }
 
-    /* subtle focus for date inputs */
-    input[type="date"]:focus, select:focus { outline: 2px solid rgba(16,185,129,0.12); border-radius:6px; }
-
-    /* larger scroll thumb for commodity list to ease mobile scrolling */
+    /* larger scroll thumb for commodity list */
     #commodity-list::-webkit-scrollbar { width:14px; }
     #commodity-list::-webkit-scrollbar-thumb { background:#e5e7eb; border-radius:12px; border:3px solid #fff; }
     #commodity-list::-webkit-scrollbar-track { background:transparent; }
+
+    input[type="date"]:focus, select:focus { outline: 2px solid rgba(16,185,129,0.12); border-radius:6px; }
   </style>
 </head>
 <body>
@@ -137,7 +137,7 @@
     <!-- Sidebar -->
     <aside id="app-sidebar" class="sidebar" aria-label="Controls">
       <div style="display:flex;align-items:center;gap:8px">
-        <img src="icons/Smartfarmher.png" class="brand-icon" style="width:28px;height:28px"/>
+        <img src="icons/Smartfarmher.png" class="brand-icon" style="width:30px;height:30px"/>
         <div style="font-weight:700;color:var(--emerald)">Smart FarmHer</div>
       </div>
 
@@ -196,7 +196,6 @@
           <!-- MOBILE toggle (visible on small screens) -->
           <button id="mobile-sidebar-toggle" aria-controls="app-sidebar" aria-expanded="false" aria-label="Open filters" style="display:none">
             <i class="fas fa-bars"></i>
-            <span class="sr-only">Open filters</span>
           </button>
 
           <div>
@@ -242,7 +241,7 @@
         <div style="display:grid;grid-template-columns:1fr 320px;gap:12px;margin-bottom:12px">
           <div class="card chart-card">
             <h4 style="margin:0 0 10px 0">Historical Price Trends</h4>
-            <canvas id="price-chart" style="width:100%;height:calc(100% - 38px)"></canvas>
+            <canvas id="price-chart"></canvas>
           </div>
 
           <div class="card">
@@ -268,9 +267,12 @@
 
       <!-- Predictive Analysis -->
       <div id="prediction-content" class="hidden">
-        <div class="card" style="margin-bottom:12px">
+        <div class="card chart-card" style="margin-bottom:12px; height:320px;">
           <h3 style="margin:0 0 8px 0">90-Day Price Forecast</h3>
-          <canvas id="forecast-chart" style="width:100%;height:300px"></canvas>
+          <!-- fixed container height ensures the chart occupies consistent space -->
+          <div style="flex:1; min-height:220px;">
+            <canvas id="forecast-chart" style="width:100%;height:100%"></canvas>
+          </div>
         </div>
 
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
@@ -302,7 +304,7 @@
   </div>
 
   <!-- Add/Edit Modal (simple) -->
-  <div id="modal-add-record" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;padding:16px;z-index:60">
+  <div id="modal-add-record" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;padding:16px;z-index:70">
     <div class="card" style="max-width:720px;margin:auto">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <h3 style="margin:0">Add / Edit Record</h3>
@@ -344,17 +346,13 @@ let currentCommodity = '';
 let currentVariety = 'All';
 let priceChart=null, forecastChart=null;
 
-/* -----------------------
-   IndexedDB helpers
-   ----------------------- */
+/* IndexedDB helpers (unchanged) */
 function openIDB(){ return new Promise((res,rej)=>{ const req=indexedDB.open(IDB_DBNAME,1); req.onupgradeneeded=e=>{ const db=e.target.result; if(!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE); }; req.onsuccess=()=>res(req.result); req.onerror=()=>rej(req.error); }); }
 async function idbPut(k,v){ const db=await openIDB(); return new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).put(v,k); tx.oncomplete=()=>res(true); tx.onerror=()=>rej(tx.error); }); }
 async function idbGet(k){ const db=await openIDB(); return new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readonly'); const req=tx.objectStore(IDB_STORE).get(k); req.onsuccess=()=>res(req.result); req.onerror=()=>rej(req.error); }); }
 async function idbDelete(k){ const db=await openIDB(); return new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readwrite'); const req=tx.objectStore(IDB_STORE).delete(k); tx.oncomplete=()=>res(true); tx.onerror=()=>rej(tx.error); }); }
 
-/* -----------------------
-   Save/Load
-   ----------------------- */
+/* Save/Load */
 async function saveToLocal(){
   const store={rows:commodityRows,markets};
   try {
@@ -377,15 +375,11 @@ function loadFromLocalSync(){
 }
 async function clearLocal(){ if(!confirm('Clear all saved data?')) return; try{ localStorage.removeItem(STORAGE_KEY); await idbDelete(STORAGE_KEY);}catch(e){} commodityRows=[]; markets=[]; refreshAllUI(); alert('Cleared'); }
 
-/* -----------------------
-   CSV fallback parse
-   ----------------------- */
+/* CSV parse fallback & wrapper (unchanged) */
 function parseCSVFallback(text,{delimiter=',',header=true}={}){ const rows=[]; let cur='',row=[],inQuotes=false; for(let i=0;i<text.length;i++){ const ch=text[i], next=text[i+1]; if(ch==='"'){ if(inQuotes && next==='"'){ cur+='"'; i++; } else { inQuotes=!inQuotes; } continue; } if(ch===delimiter && !inQuotes){ row.push(cur); cur=''; continue; } if((ch=='\n' || ch=='\r') && !inQuotes){ if(ch=='\r' && next=='\n') i++; row.push(cur); rows.push(row); row=[]; cur=''; continue; } cur+=ch; } if(cur!=='' || row.length>0){ row.push(cur); rows.push(row);} if(!header) return rows; const headers=rows.shift().map(h=>h.trim()); return rows.map(r=>{ const obj={}; for(let i=0;i<headers.length;i++) obj[headers[i]] = r[i]!==undefined ? r[i] : ''; return obj; });}
 function parseCSVText(text,options={header:true,skipEmptyLines:true}){ return new Promise((resolve)=>{ if(typeof Papa !== 'undefined'){ try{ const res = Papa.parse(text, Object.assign({}, options)); resolve(res.data); }catch(e){ resolve(parseCSVFallback(text,{header:options.header})); } } else { resolve(parseCSVFallback(text,{header:options.header})); } }); }
 
-/* -----------------------
-   Row normalization & processing
-   ----------------------- */
+/* Row normalization & processing */
 function normalizeRow(r){
   const dateStr = r.Date || r.date || r.DATE || r['Date'] || '';
   const commodity = (r.Commodity || r.commodity || r.Item || r['Commodity'] || '').toString().trim();
@@ -411,9 +405,7 @@ function processPreloadedData(rows){
   refreshAllUI();
 }
 
-/* -----------------------
-   UI refresh & helpers
-   ----------------------- */
+/* UI refresh & helpers */
 function refreshAllUI(){
   populateMarketSelect();
   populateCategoryFilter();
@@ -443,11 +435,11 @@ function populateCommodityList(){
   const container = document.getElementById('commodity-list'); if(!container) return;
   const selCat = (document.getElementById('category-filter')||{}).value || 'All';
   const comms = [...new Set(commodityRows.filter(r => selCat==='All' || r.category===selCat).map(r=>r.commodity))].sort();
-  container.innerHTML=''; comms.forEach(c => {
+  container.innerHTML='';
+  comms.forEach(c => {
     const btn = document.createElement('button');
     btn.textContent = c;
     btn.className='commodity-btn';
-    // small style to make it look pill-like
     btn.style.width='100%'; btn.style.textAlign='left';
     btn.onclick = ()=>{ currentCommodity = c; document.querySelectorAll('#commodity-list .commodity-btn').forEach(x=>x.classList.remove('selected')); btn.classList.add('selected'); populateVarietyFilter(); applyFilters(); closeMobileSidebarIfOpen(); };
     container.appendChild(btn);
@@ -473,7 +465,6 @@ function setDefaultDateRange(){
   if(startEl) startEl.value = (startCandidate < minDate ? minDate : startCandidate).toISOString().split('T')[0];
 }
 
-/* Filters & apply */
 function applyFilters(){
   const start = new Date((document.getElementById('start-date')||{}).value || '1970-01-01');
   const end = new Date((document.getElementById('end-date')||{}).value || '2100-01-01');
@@ -524,7 +515,6 @@ function updateSummaryCards(){
   const container = document.getElementById('summary-cards'); if(!container) return;
   if(!filteredRows.length){ container.innerHTML = '<div class="card" style="text-align:center;color:var(--muted)">No data for selection</div>'; return; }
   const latest = filteredRows[filteredRows.length-1];
-  const prev = filteredRows[filteredRows.length-2] || latest;
   const prices = filteredRows.map(r=>r.modalPriceKg);
   const avg = prices.reduce((a,b)=>a+b,0)/prices.length;
   const minP = Math.min(...prices), maxP = Math.max(...prices);
@@ -537,11 +527,11 @@ function updateSummaryCards(){
   container.innerHTML = cards.map(c=>`<div class="card"><div style="color:var(--muted);font-size:13px">${c.title}</div><div style="font-weight:700;font-size:20px;margin-top:6px">${c.value}</div><div class="small-muted">${c.sub||''}</div></div>`).join('');
 }
 
+/* Price chart (shows price vs date for the selected filter range) */
 function updatePriceChart(){
   const ctx = document.getElementById('price-chart')?.getContext('2d'); if(!ctx) return;
   if(priceChart) priceChart.destroy();
   if(!filteredRows.length) { ctx.clearRect(0,0,ctx.canvas.width, ctx.canvas.height); return; }
-  // show price vs date using selected filter range
   const dataset = filteredRows.map(r=>({x:new Date(r.date), y:r.modalPriceKg}));
   priceChart = new Chart(ctx, {
     type:'line',
@@ -555,7 +545,8 @@ function updatePriceChart(){
         y:{ beginAtZero:false }
       },
       plugins:{ legend:{display:false} },
-      maintainAspectRatio:false
+      maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false}
     }
   });
 }
@@ -568,9 +559,7 @@ function updateDataTable(){
   body.innerHTML = last.map(r=>`<tr style="border-bottom:1px solid rgba(15,23,42,0.04)"><td style="padding:10px">${new Date(r.date).toLocaleDateString()}</td><td style="padding:10px">${r.market}</td><td style="padding:10px">${r.commodity}</td><td style="padding:10px">${r.variety}</td><td style="padding:10px;text-align:right">₹${r.modalPriceKg.toFixed(2)}</td><td style="padding:10px;text-align:right">₹${r.minPriceKg.toFixed(2)}</td><td style="padding:10px;text-align:right">₹${r.maxPriceKg.toFixed(2)}</td><td style="padding:10px;text-align:center">${trendSymbolForRow(r)}</td></tr>`).join('');
 }
 
-/* -----------------------
-   Forecasting (lightweight)
-   ----------------------- */
+/* Forecasting: compute and render (maintain fixed space by using container height) */
 function computeSimpleForecast(series, days=90){
   if(!series.length) return [];
   const prices = series.map(s=>s.y);
@@ -598,7 +587,6 @@ function computeSimpleForecast(series, days=90){
   return forecasts;
 }
 
-/* Render forecast & strategy */
 function computeForecastAndRender(){
   if(!filteredRows.length){ document.getElementById('strategy-signal').textContent='—'; return; }
   const series = filteredRows.map(r=>({date:new Date(r.date), y:r.modalPriceKg}));
@@ -615,14 +603,14 @@ function computeForecastAndRender(){
         { label:'Forecasted Price', data: dataFc, borderColor:'#ef4444', borderDash:[6,6], pointRadius:0, fill:false, tension:0.25 }
       ]
     },
-    options:{ parsing:false, scales:{ x:{ type:'time', time:{unit:'month'} }, y:{ beginAtZero:false } }, plugins:{ legend:{display:true} }, maintainAspectRatio:false }
+    options:{ parsing:false, scales:{ x:{ type:'time', time:{unit:'month'} }, y:{ beginAtZero:false } }, plugins:{ legend:{display:true} }, maintainAspectRatio:false, interaction:{mode:'index',intersect:false} }
   });
 
-  // simpler strategic outlook: two outcomes
+  // two-option strategic outlook
   const recent = series.slice(-30).map(s=>s.y);
   if(recent.length < 30){
     document.getElementById('strategy-signal').textContent = 'Not enough data';
-    document.getElementById('strategy-detail').textContent = 'Not enough historical data for a reliable forecast (requires more history).';
+    document.getElementById('strategy-detail').textContent = 'Not enough historical data for a reliable forecast.';
     document.getElementById('strategy-signal-card').className = 'strategy-card card';
     document.getElementById('peak-month').textContent = '—';
     document.getElementById('prediction-outlook').innerHTML = '<div class="card">Not enough historical data for a reliable forecast (requires at least one year).</div>';
@@ -656,9 +644,7 @@ function computeForecastAndRender(){
   document.getElementById('prediction-outlook').innerHTML = `<div class="card"><strong>Forecast summary:</strong> 90-day outlook is ${(pctChange>0.08)?'positive':(pctChange<-0.05?'negative':'neutral')}. Average forecast price (30d): ₹${(forecast.slice(0,30).reduce((a,b)=>a+b.y,0)/Math.max(1,forecast.slice(0,30).length)).toFixed(2)}</div>`;
 }
 
-/* -----------------------
-   Recommendations & Top crops
-   ----------------------- */
+/* Recommendations (unchanged) */
 function generateRecommendations(count=10){
   const commodities = [...new Set(commodityRows.map(r=>r.commodity))];
   const recs = commodities.map(name=>{
@@ -675,7 +661,6 @@ function generateRecommendations(count=10){
   }).filter(Boolean).sort((a,b)=>b.score-a.score);
   return recs.slice(0,count);
 }
-
 function generateTopCropsUI(){
   const recs = generateRecommendations(10);
   const cont = document.getElementById('top-crops-container'); if(!cont) return;
@@ -683,7 +668,7 @@ function generateTopCropsUI(){
   cont.innerHTML = recs.map((r,i)=>`<div class="recommend-card"><div style="display:flex;justify-content:space-between;align-items:start"><div><div style="font-size:14px;color:var(--muted)">#${i+1}</div><div style="font-weight:700;font-size:16px">${r.commodity}</div><div class="small-muted" style="margin-top:6px">Avg ₹${r.avgPrice.toFixed(2)}/kg</div></div><div style="text-align:right"><span style="background:${r.risk==='Low'?'#ecfdf5':r.risk==='Medium'?'#fffbeb':'#fff1f2'};padding:6px 8px;border-radius:12px;font-size:12px">${r.risk} RISK</span></div></div></div>`).join('');
 }
 
-/* Weather with Open-Meteo */
+/* Weather (unchanged) */
 async function renderWeatherForCurrentMarket(){
   const sel = document.getElementById('market-select'); if(!sel) return;
   const marketName = sel.value;
@@ -699,9 +684,7 @@ async function renderWeatherForCurrentMarket(){
   } catch(e){ container.innerHTML = `<div class="small-muted">Weather fetch error</div>`; console.warn(e); }
 }
 
-/* -----------------------
-   File import handling
-   ----------------------- */
+/* File import handling (unchanged) */
 async function handleFileImport(file){
   if(!file) return;
   try {
@@ -722,46 +705,45 @@ async function handleFileImport(file){
   } catch(e){ console.error(e); alert('Import failed: ' + e.message); }
 }
 
-/* -----------------------
-   Small helpers for mobile sidebar
-   ----------------------- */
+/* Mobile sidebar helpers */
 function openMobileSidebar(){
   const sb = document.getElementById('app-sidebar'); const ov = document.getElementById('mobile-overlay'); if(!sb) return;
   sb.classList.add('open'); ov.classList.add('open');
   document.getElementById('mobile-sidebar-toggle').setAttribute('aria-expanded','true');
   ov.style.display='block';
-  // lock body scroll
   document.body.style.overflow='hidden';
 }
 function closeMobileSidebar(){
   const sb = document.getElementById('app-sidebar'); const ov = document.getElementById('mobile-overlay'); if(!sb) return;
   sb.classList.remove('open'); ov.classList.remove('open');
   document.getElementById('mobile-sidebar-toggle').setAttribute('aria-expanded','false');
-  // allow body scroll
   document.body.style.overflow='';
   setTimeout(()=>{ if(ov) ov.style.display='none'; }, 280);
 }
 function closeMobileSidebarIfOpen(){ const sb = document.getElementById('app-sidebar'); if(sb && sb.classList.contains('open')) closeMobileSidebar(); }
 
-/* -----------------------
-   Startup & buttons
-   ----------------------- */
+/* Startup & wiring */
 function showDashboardAfterLoad(){ document.getElementById('start-screen').classList.add('hidden'); document.getElementById('main-dashboard').classList.remove('hidden'); refreshAllUI(); window.scrollTo(0,0); }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // keep start screen visible by default (no auto preload)
   document.getElementById('start-screen').classList.remove('hidden');
   document.getElementById('main-dashboard').classList.add('hidden');
 
-  // mobile toggle wiring
+  // mobile toggle event wiring + ensure toggle is visible on small screens
   const mobToggle = document.getElementById('mobile-sidebar-toggle');
   const overlay = document.getElementById('mobile-overlay');
+
+  // Make toggle visible when viewport is small (and ensure it's always usable)
+  function updateToggleVisibility(){
+    if(window.innerWidth <= 900){ mobToggle.style.display='inline-flex'; } else { mobToggle.style.display='none'; closeMobileSidebar(); }
+  }
+  updateToggleVisibility();
+  window.addEventListener('resize', updateToggleVisibility);
+
   mobToggle?.addEventListener('click', ()=>{ const sb = document.getElementById('app-sidebar'); if(sb.classList.contains('open')) closeMobileSidebar(); else openMobileSidebar(); });
   overlay?.addEventListener('click', closeMobileSidebar);
-  // keyboard accessibility for toggle
   mobToggle?.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' ') { e.preventDefault(); mobToggle.click(); } });
 
-  // wire start preloaded - IMPORTANT: ensure showDashboardAfterLoad() is always called after success
   document.getElementById('start-analysis-btn')?.addEventListener('click', async ()=>{
     if(!PRELOADED_RAW_URL) { alert('No PRELOADED_RAW_URL configured'); return; }
     try {
@@ -784,7 +766,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch(e) { console.error(e); alert('Preload failed: ' + (e.message||e)); }
   });
 
-  // load saved only when user clicks - do not auto-show dashboard on page load
   document.getElementById('load-local-btn')?.addEventListener('click', ()=>{ const ok = loadFromLocalSync(); setTimeout(()=>showDashboardAfterLoad(), 150); });
 
   document.getElementById('file-input')?.addEventListener('change', ev=>handleFileImport(ev.target.files[0]));
