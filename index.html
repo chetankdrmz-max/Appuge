@@ -15,65 +15,53 @@
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-    :root{ --emerald:#10b981; --muted:#6b7280; --card:#ffffff; --bg:#f3f6f8; --danger:#ef4444; }
+    :root{
+      --emerald:#10b981;
+      --muted:#6b7280;
+      --card:#ffffff;
+      --bg:#f3f6f8;
+    }
     html,body { height:100%; margin:0; }
-    body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:var(--bg); color:#0f172a; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
-
-    /* generic card */
+    body {
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background:var(--bg);
+      color:#0f172a;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      margin:0;
+    }
     .card { background: var(--card); border-radius: 12px; padding: 16px; box-shadow: 0 6px 18px rgba(2,6,23,0.06); border: 1px solid rgba(15,23,42,0.04); }
 
-    /* start screen background + position (centered horizontally, near top) */
+    /* start screen */
     .start-bg {
       background-image: url('icons/bg-desktop.jpg');
-      background-size:cover;
-      background-position:center;
+      background-size:cover; background-position:center;
       min-height:100vh;
-      display:flex;
-      align-items:flex-start; /* near top */
-      justify-content:center;
+      display:flex; align-items:flex-start; justify-content:center;
       padding:40px 20px 80px 20px;
     }
     @media (max-width:768px){ .start-bg{ background-image:url('icons/bg-mobile.png'); } }
 
     .small-muted { color: var(--muted); font-size:13px; }
-    .main-wrap { padding:24px; }
-
-    /* SIDEBAR */
-    .sidebar {
-      width:280px;
-      background:#fff;
-      border-right:1px solid rgba(15,23,42,0.04);
-      padding:20px;
-      display:flex;
-      flex-direction:column;
-      gap:14px;
-      height:calc(100vh - 40px);
-      position:sticky;
-      top:20px;
-      z-index:1100;
-      overflow:auto; /* allow scrolling */
-    }
-    .sidebar .list { max-height:320px; overflow:auto; border:1px solid rgba(15,23,42,0.04); border-radius:8px; padding:6px; }
+    .sidebar { width:280px; background:#fff; border-right:1px solid rgba(15,23,42,0.04); padding:20px; display:flex; flex-direction:column; gap:14px; height:calc(100vh - 40px); position:sticky; top:20px; z-index:1000; }
+    .sidebar .list { max-height:260px; overflow:auto; border:1px solid rgba(15,23,42,0.04); border-radius:8px; padding:6px; }
     .sidebar button.primary { background:var(--emerald); color:white; padding:10px; border-radius:8px; }
     .nav-tabs button.active { border-bottom:3px solid var(--emerald); color:var(--emerald); font-weight:600; }
-
     .snapshot-table { max-height:160px; overflow:auto; display:block; }
     .snapshot-table table { width:100%; border-collapse:collapse; }
     .snapshot-table td, .snapshot-table th { padding:8px; border-bottom:1px solid rgba(15,23,42,0.04); font-size:13px; }
-
-    .recommend-card { border-radius:10px; padding:12px; border:1px solid rgba(16,185,129,0.08); background:linear-gradient(180deg, rgba(16,185,129,0.02), transparent); }
+    .recommend-card { border-radius:10px; padding:12px; border:1px solid rgba(16,185,129,0.08); background:linear-gradient(180deg, rgba(16,185,129,0.02), transparent); box-shadow: 0 6px 18px rgba(2,6,23,0.04); }
     .strategy-card { border-radius:10px; padding:14px; }
     .strategy-buy { background:#ecfdf5; border:1px solid #bbf7d0; color:#065f46; }
     .strategy-wait { background:#fff7ed; border:1px solid #fde68a; color:#92400e; }
     .strategy-sell { background:#fff1f2; border:1px solid #fecaca; color:#7f1d1d; }
-
     .top-recs { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; }
 
-    /* charts fixed heights */
-    .chart-card { height:360px; }
-    .forecast-card { height:340px; }
+    /* charts */
+    .chart-card { height:320px; }
+    .forecast-card { height:300px; }
 
-    /* brand header (keeps in top header only, removed from sidebar) */
+    /* brand icon */
     .brand-icon { width:34px; height:34px; display:inline-block; vertical-align:middle; margin-right:10px; border-radius:8px; object-fit:cover; }
     .brand-title { display:inline-block; vertical-align:middle; line-height:1; }
     .brand-sub { display:block; font-size:13px; color:var(--muted); margin-top:4px; }
@@ -83,60 +71,48 @@
     .commodity-btn:hover { background:#f3f4f6; cursor:pointer; transition: background 120ms ease; }
     .commodity-btn.selected { background:var(--emerald); color:#fff; box-shadow:0 6px 12px rgba(16,185,129,0.12); }
 
-    /* larger rounded scrollbar for commodity list */
+    /* scrollbar styling for commodity list (bigger thumb) */
     #commodity-list::-webkit-scrollbar { width:12px; }
     #commodity-list::-webkit-scrollbar-track { background:transparent; }
     #commodity-list::-webkit-scrollbar-thumb { background: rgba(15,23,42,0.12); border-radius:8px; }
 
-    /* mobile overlay sidebar behavior */
+    /* mobile tweaks and sidebar overlay */
     @media (max-width:900px) {
-      .sidebar {
-        position:fixed;
-        left:-340px;
-        top:0;
-        height:100vh;
-        z-index:1200;
-        box-shadow: 0 12px 40px rgba(2,6,23,0.2);
-        transition:left 220ms cubic-bezier(.2,.9,.3,1);
-      }
+      .sidebar { position:fixed; left:-340px; top:0; height:100vh; z-index:1200; box-shadow: 0 12px 40px rgba(2,6,23,0.2); transition:left 240ms ease; }
       body.sidebar-open .sidebar { left:0; }
-
       .main-wrap { padding:14px; }
       .card { padding:12px; border-radius:10px; }
-      .chart-card { height:260px; }
-
+      .chart-card { height:240px; }
       /* date inputs stacked */
       .date-stack { flex-direction:column; }
       .date-stack input { width:100%; }
-
-      /* larger thumb on mobile */
+      /* make commodity list thumb larger on mobile also */
       #commodity-list::-webkit-scrollbar { width:14px; }
+      /* overlay backdrop when sidebar open */
+      body.sidebar-open::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.35);
+        z-index:1100;
+      }
     }
 
-    /* sticky filters on desktop */
+    /* sticky filter apply area */
     .filters-sticky { position:sticky; top:12px; }
 
-    /* mobile hamburger visible only on small screens (no inline display override) */
-    #mobile-sidebar-toggle { display:none; background:transparent; border:1px solid rgba(15,23,42,0.06); padding:8px; border-radius:8px; }
-    @media (max-width:900px){ #mobile-sidebar-toggle { display:inline-flex; align-items:center; justify-content:center; } }
-
-    /* subtle focus for date inputs */
+    /* focus for date inputs */
     input[type="date"]:focus, select:focus { outline: 2px solid rgba(16,185,129,0.12); border-radius:6px; }
 
-    /* remove sidebar branding visuals (per request) */
-    .sidebar .branding { display:none; }
-
-    /* top-recs subtle depth */
-    .top-recs .recommend-card { box-shadow: 0 6px 18px rgba(2,6,23,0.04); }
-
-    /* nav tab visual consistent */
-    .nav-tabs button { padding:12px 10px; border:none; background:transparent; cursor:pointer; color:inherit; }
+    /* header hamburger */
+    .hamburger { display:none; border:none; background:transparent; font-size:20px; padding:8px; border-radius:8px; }
+    @media (max-width:900px){ .hamburger { display:inline-block; } }
   </style>
 </head>
 <body>
 
   <!-- START SCREEN -->
-  <div id="start-screen" class="start-bg">
+  <div id="start-screen" class="start-bg" role="dialog" aria-label="Welcome">
     <div class="card" style="max-width:900px; width:100%; margin-top:24px;">
       <div style="display:flex;align-items:center;gap:12px;justify-content:space-between">
         <div style="display:flex;align-items:center;gap:12px">
@@ -162,10 +138,11 @@
   </div>
 
   <!-- MAIN -->
-  <div id="main-dashboard" style="display:flex;min-height:100vh">
-    <!-- Sidebar (no branding/title per request) -->
-    <aside class="sidebar filters-sticky" aria-label="Controls">
-      <!-- Markets -->
+  <div id="main-dashboard" style="display:none;min-height:100vh">
+    <!-- Sidebar -->
+    <aside class="sidebar filters-sticky" aria-label="Controls" id="main-sidebar">
+      <!-- removed extra branding in sidebar per request -->
+
       <div>
         <label class="small-muted">Markets</label>
         <select id="market-select" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);margin-top:6px"></select>
@@ -175,25 +152,21 @@
         </div>
       </div>
 
-      <!-- Category -->
       <div>
         <label class="small-muted">Category</label>
         <select id="category-filter" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);margin-top:6px"><option>All</option></select>
       </div>
 
-      <!-- Commodity -->
       <div>
         <label class="small-muted">Commodity</label>
         <div id="commodity-list" class="list" aria-label="Commodities list"></div>
       </div>
 
-      <!-- Variety -->
       <div>
         <label class="small-muted">Variety</label>
         <select id="variety-filter" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);margin-top:6px"><option>All</option></select>
       </div>
 
-      <!-- Date range -->
       <div>
         <label class="small-muted">Date range</label>
         <div class="date-stack" style="display:flex;gap:8px;margin-top:6px">
@@ -202,13 +175,11 @@
         </div>
       </div>
 
-      <!-- Apply / Reset -->
       <div style="display:flex;gap:8px;margin-top:10px">
         <button id="apply-filters" class="primary" style="flex:1;border:none">Apply</button>
         <button id="reset-filters" style="flex:1;border-radius:8px;border:1px solid rgba(15,23,42,0.06)">Reset</button>
       </div>
 
-      <!-- bottom actions -->
       <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
         <button id="add-record-btn" style="background:#2563eb;color:white;padding:10px;border-radius:8px;border:none"><i class="fas fa-plus"></i> Add Record</button>
         <button id="import-csv-btn" style="background:#111827;color:white;padding:10px;border-radius:8px;border:none"><i class="fas fa-file-import"></i> Import CSV/XLSX</button>
@@ -218,27 +189,23 @@
     </aside>
 
     <!-- Main area -->
-    <div class="flex-1 main-wrap">
+    <div class="flex-1 main-wrap" style="padding:24px;">
       <header style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
         <div style="display:flex;align-items:center;gap:8px">
-          <!-- Hamburger for mobile -->
-          <button id="mobile-sidebar-toggle" aria-label="Open filters" title="Open filters"><i class="fas fa-bars"></i></button>
-
+          <button id="mobile-sidebar-toggle" class="hamburger" aria-label="Open filters"><i class="fas fa-bars"></i></button>
           <img src="icons/Smartfarmher.png" class="brand-icon" style="width:28px;height:28px"/>
           <div style="font-weight:700;color:var(--emerald);font-size:20px">Smart FarmHer</div>
-          <div style="font-size:13px;color:var(--muted);margin-left:10px">Grow Good Sell Smart</div>
         </div>
-
         <div style="display:flex;gap:10px;align-items:center">
           <button id="show-help-btn" style="background:#f3f4f6;padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.04)">Help</button>
         </div>
       </header>
 
       <!-- tabs -->
-      <div style="margin-bottom:16px" class="nav-tabs" role="tablist">
-        <button id="tab-dashboard" class="active" role="tab" aria-selected="true">Dashboard</button>
-        <button id="tab-prediction" role="tab" aria-selected="false">Predictive Analysis</button>
-        <button id="tab-top-crops" role="tab" aria-selected="false">Top 10 Crops</button>
+      <div style="margin-bottom:16px" class="nav-tabs" role="tablist" aria-label="Main tabs">
+        <button id="tab-dashboard" class="active" style="background:none;border:none;padding:12px 10px;margin-right:6px" role="tab">Dashboard</button>
+        <button id="tab-prediction" style="background:none;border:none;padding:12px 10px;margin-right:6px" role="tab">Predictive Analysis</button>
+        <button id="tab-top-crops" style="background:none;border:none;padding:12px 10px" role="tab">Top 10 Crops</button>
       </div>
 
       <!-- Dashboard content -->
@@ -290,7 +257,7 @@
       </div>
 
       <!-- Predictive Analysis -->
-      <div id="prediction-content" class="hidden" aria-hidden="true">
+      <div id="prediction-content" class="hidden">
         <div class="card forecast-card" style="margin-bottom:12px">
           <h3 style="margin:0 0 8px 0">90-Day Price Forecast</h3>
           <div style="height:300px"><canvas id="forecast-chart" style="width:100%;height:100%"></canvas></div>
@@ -314,7 +281,7 @@
       </div>
 
       <!-- Top 10 Crops -->
-      <div id="top-crops-content" class="hidden" aria-hidden="true">
+      <div id="top-crops-content" class="hidden">
         <div class="card" style="margin-bottom:12px">
           <h3 style="margin:0 0 8px 0">Top Crop Recommendations</h3>
           <div id="top-crops-container" class="top-recs"></div>
@@ -325,7 +292,7 @@
   </div>
 
   <!-- Add/Edit Modal (simple) -->
-  <div id="modal-add-record" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;padding:16px;z-index:50">
+  <div id="modal-add-record" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;padding:16px;z-index:2000">
     <div class="card" style="max-width:720px;margin:auto">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <h3 style="margin:0">Add / Edit Record</h3>
@@ -354,7 +321,6 @@
 /* ===================
    Configuration
    =================== */
-/* fixed GitHub raw URL format so fetch works */
 const PRELOADED_RAW_URL = 'https://raw.githubusercontent.com/chetankdrmz-max/Smart_FarmHer/refs/heads/main/data/Raw_Concatenated.csv';
 const STORAGE_KEY = 'agri_dashboard_store_v1';
 const IDB_DBNAME = 'agri_analyst_db_v1';
@@ -473,6 +439,7 @@ function populateCommodityList(){
     btn.textContent = c;
     btn.className='commodity-btn';
     btn.setAttribute('type','button');
+    btn.style.background='transparent';
     btn.onclick = ()=>{
       currentCommodity = c;
       document.querySelectorAll('#commodity-list .commodity-btn').forEach(x=>x.classList.remove('selected'));
@@ -523,7 +490,10 @@ function applyFilters(){
 function resetFilters(){ document.getElementById('category-filter').value='All'; currentCommodity=''; populateCommodityList(); setDefaultDateRange(); applyFilters(); }
 
 function updateDashboardUI(){
-  document.getElementById('main-header')?.textContent = currentCommodity ? `${currentCommodity} Dashboard` : 'Dashboard';
+  document.getElementById('main-header')?.remove(); // compatibility if header not present
+  // update header text in UI
+  // (we show commodity in main header area by design earlier — keep the small header change)
+  document.querySelector('.brand-title')?.textContent = 'Smart FarmHer';
   updateSnapshotTable(); updateSummaryCards(); updatePriceChart(); updateDataTable(); renderWeatherForCurrentMarket();
   if(!document.getElementById('prediction-content').classList.contains('hidden')) computeForecastAndRender();
 }
@@ -574,21 +544,15 @@ function updatePriceChart(){
   if(priceChart) priceChart.destroy();
   if(!filteredRows.length) { ctx.clearRect(0,0,ctxEl.width, ctxEl.height); return; }
 
-  // prepare dataset (already sorted)
   const data = filteredRows.map(r=>({x:new Date(r.date), y:r.modalPriceKg}));
   priceChart = new Chart(ctx, {
     type:'line',
-    data:{ datasets:[
-      { label:'Modal Price', data: data, borderColor:'rgb(34,197,94)', backgroundColor:'rgba(16,185,129,0.06)', fill:true, tension:0.25, pointRadius:2 }
-    ] },
+    data:{ datasets:[ { label:'Modal Price', data: data, borderColor:'rgb(34,197,94)', backgroundColor:'rgba(16,185,129,0.06)', fill:true, tension:0.25, pointRadius:2 } ] },
     options: {
       parsing:false,
       maintainAspectRatio:false,
       responsive:true,
-      scales:{
-        x:{ type:'time', time:{ unit:'month', tooltipFormat:'MMM yyyy' }, ticks:{ autoSkip: true, maxRotation:0, minRotation:0 } },
-        y:{ beginAtZero:false }
-      },
+      scales:{ x:{ type:'time', time:{ unit:'month', tooltipFormat:'MMM yyyy' }, ticks:{ autoSkip: true, maxRotation:0, minRotation:0 } }, y:{ beginAtZero:false } },
       plugins:{ legend:{display:true} }
     }
   });
@@ -632,13 +596,12 @@ function computeSimpleForecast(series, days=90){
   return forecasts;
 }
 
-/* Render forecast & strategy */
+/* Render forecast & strategy (uses filteredRows) */
 function computeForecastAndRender(){
   if(!filteredRows.length){ document.getElementById('strategy-signal').textContent='—'; return; }
   const series = filteredRows.map(r=>({date:new Date(r.date), y:r.modalPriceKg}));
   const forecast = computeSimpleForecast(series, 90);
-  const ctxEl = document.getElementById('forecast-chart'); if(!ctxEl) return;
-  const ctx = ctxEl.getContext('2d');
+  const ctxEl = document.getElementById('forecast-chart'); if(!ctxEl) return; const ctx = ctxEl.getContext('2d');
   if(forecastChart) forecastChart.destroy();
   const dataHist = series.map(s=>({x:s.date, y:s.y}));
   const dataFc = forecast.map(f=>({x:f.date, y:f.y}));
@@ -651,38 +614,35 @@ function computeForecastAndRender(){
     options:{ parsing:false, maintainAspectRatio:false, responsive:true, scales:{ x:{ type:'time', time:{unit:'month', tooltipFormat:'MMM yyyy'} }, y:{ beginAtZero:false } }, plugins:{ legend:{display:true} } }
   });
 
-  // simple strategic signal (two predictions summarized)
+  // strategy (simplified)
   const recent = series.slice(-90).map(s=>s.y);
   if(recent.length < 30){
     document.getElementById('strategy-signal').textContent = 'Not enough data';
     document.getElementById('strategy-detail').textContent = 'Not enough historical data for a reliable forecast.';
     document.getElementById('strategy-signal-card').className = 'strategy-card card';
     document.getElementById('peak-month').textContent = '—';
-    document.getElementById('prediction-outlook').innerHTML = '<div class="card">Not enough historical data for a reliable forecast.</div>';
+    document.getElementById('prediction-outlook').innerHTML = '<div class="card">Not enough historical data for a reliable forecast (requires more history).</div>';
     return;
   }
-
   const startAvg = recent.slice(0,7).reduce((a,b)=>a+b,0)/7;
   const endAvg = recent.slice(-7).reduce((a,b)=>a+b,0)/7;
   const pctChange = (endAvg - startAvg) / Math.max(1, startAvg);
-
   if(pctChange > 0.08){
     document.getElementById('strategy-signal').textContent = 'Grow Now';
-    document.getElementById('strategy-detail').textContent = 'Price trend positive — consider planting now.';
+    document.getElementById('strategy-detail').textContent = 'Prices are currently above average and trend is positive.';
     document.getElementById('strategy-signal-card').className = 'strategy-card strategy-buy card';
   } else if(pctChange < -0.05){
     document.getElementById('strategy-signal').textContent = 'Wait';
-    document.getElementById('strategy-detail').textContent = 'Prices trending down — consider waiting.';
+    document.getElementById('strategy-detail').textContent = 'Prices are trending down.';
     document.getElementById('strategy-signal-card').className = 'strategy-card strategy-wait card';
   } else {
     document.getElementById('strategy-signal').textContent = 'Consider';
-    document.getElementById('strategy-detail').textContent = 'Market relatively stable — moderate approach.';
+    document.getElementById('strategy-detail').textContent = 'Market is relatively stable.';
     document.getElementById('strategy-signal-card').className = 'strategy-card card';
   }
 
   // peak month
-  const monthly = {};
-  filteredRows.forEach(r=>{ const m = new Date(r.date).getMonth()+1; monthly[m] = monthly[m] || []; monthly[m].push(r.modalPriceKg); });
+  const monthly = {}; filteredRows.forEach(r=>{ const m = new Date(r.date).getMonth()+1; monthly[m] = monthly[m] || []; monthly[m].push(r.modalPriceKg); });
   const avgByMonth = Object.keys(monthly).map(k=>({m:parseInt(k), avg: monthly[k].reduce((a,b)=>a+b,0)/monthly[k].length}));
   if(avgByMonth.length){ const peak = avgByMonth.reduce((a,b)=>a.avg > b.avg ? a : b); const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; document.getElementById('peak-month').textContent = months[peak.m-1]; } else document.getElementById('peak-month').textContent='—';
 
@@ -713,10 +673,10 @@ function generateTopCropsUI(){
   const recs = generateRecommendations(10);
   const cont = document.getElementById('top-crops-container'); if(!cont) return;
   if(!recs.length){ cont.innerHTML = '<div class="small-muted">Not enough data for recommendations.</div>'; return; }
-  cont.innerHTML = recs.map((r,i)=>`<div class="recommend-card" style="box-shadow: 0 6px 18px rgba(2,6,23,0.04);"><div style="display:flex;justify-content:space-between;align-items:start"><div><div style="font-size:14px;color:var(--muted)">#${i+1}</div><div style="font-weight:700;font-size:16px">${r.commodity}</div><div class="small-muted" style="margin-top:6px">Avg ₹${r.avgPrice.toFixed(2)}/kg</div></div><div style="text-align:right"><span style="background:${r.risk==='Low'?'#ecfdf5':r.risk==='Medium'?'#fffbeb':'#fff1f2'};padding:6px 8px;border-radius:12px;font-size:12px">${r.risk} RISK</span></div></div></div>`).join('');
+  cont.innerHTML = recs.map((r,i)=>`<div class="recommend-card"><div style="display:flex;justify-content:space-between;align-items:start"><div><div style="font-size:14px;color:var(--muted)">#${i+1}</div><div style="font-weight:700;font-size:16px">${r.commodity}</div><div class="small-muted" style="margin-top:6px">Avg ₹${r.avgPrice.toFixed(2)}/kg</div></div><div style="text-align:right"><span style="background:${r.risk==='Low'?'#ecfdf5':r.risk==='Medium'?'#fffbeb':'#fff1f2'};padding:6px 8px;border-radius:12px;font-size:12px">${r.risk} RISK</span></div></div></div>`).join('');
 }
 
-/* Weather with Open-Meteo */
+/* Weather */
 async function renderWeatherForCurrentMarket(){
   const sel = document.getElementById('market-select'); if(!sel) return;
   const marketName = sel.value;
@@ -758,40 +718,66 @@ async function handleFileImport(file){
 /* -----------------------
    Startup & buttons
    ----------------------- */
-function showDashboardAfterLoad(){
-  document.getElementById('start-screen').style.display='none';
-  document.body.classList.remove('sidebar-open');
-  document.getElementById('main-dashboard').style.display='flex';
-  refreshAllUI();
-  window.scrollTo(0,0);
-}
+function showDashboardAfterLoad(){ document.getElementById('start-screen').style.display='none'; document.body.classList.remove('sidebar-open'); document.getElementById('main-dashboard').style.display='block'; refreshAllUI(); window.scrollTo(0,0); }
 
+/* Robust Load Preloaded Data handler (replace previous handlers with this) */
 document.addEventListener('DOMContentLoaded', () => {
-  // start visible
+  // start screen visible by default
   document.getElementById('start-screen').style.display='block';
   document.getElementById('main-dashboard').style.display='none';
 
-  // wire start preloaded
-  document.getElementById('start-analysis-btn')?.addEventListener('click', async ()=>{
-    if(!PRELOADED_RAW_URL) { alert('No PRELOADED_RAW_URL configured'); return; }
+  // wire start preloaded - robust
+  document.getElementById('start-analysis-btn')?.addEventListener('click', async () => {
+    if (!PRELOADED_RAW_URL) { alert('No PRELOADED_RAW_URL configured'); return; }
     try {
-      const resp = await fetch(PRELOADED_RAW_URL);
-      if(!resp.ok) throw new Error('Fetch failed: ' + resp.status);
-      const contentType = resp.headers.get('content-type') || '';
-      const blob = await resp.blob();
-      let rows = [];
-      if(contentType.includes('text') || PRELOADED_RAW_URL.toLowerCase().endsWith('.csv')){
-        const text = await blob.text(); rows = await parseCSVText(text, {header:true,skipEmptyLines:true});
-      } else {
-        const ab = await blob.arrayBuffer(); const wb = XLSX.read(ab, { type: 'array' }); const sheet = wb.Sheets[wb.SheetNames[0]]; rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+      console.log('[preload] fetching', PRELOADED_RAW_URL);
+      const resp = await fetch(PRELOADED_RAW_URL, { cache: 'no-store' });
+      if (!resp.ok) {
+        const msg = `Preload fetch failed: ${resp.status} ${resp.statusText}`;
+        console.error('[preload]', msg);
+        alert(msg + '\nCheck the URL or network (open DevTools Console for details).');
+        return;
       }
-
+      const contentType = (resp.headers.get('content-type') || '').toLowerCase();
+      console.log('[preload] response OK, content-type:', contentType);
+      let rows = [];
+      try {
+        if (contentType.includes('text') || PRELOADED_RAW_URL.toLowerCase().endsWith('.csv')) {
+          const text = await resp.text();
+          if (!text || text.trim().length < 10) {
+            throw new Error('Fetched file appears empty or too small');
+          }
+          rows = await parseCSVText(text, { header: true, skipEmptyLines: true });
+        } else {
+          const ab = await resp.arrayBuffer();
+          const wb = XLSX.read(ab, { type: 'array' });
+          const sheet = wb.Sheets[wb.SheetNames[0]];
+          rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+        }
+      } catch (parseErr) {
+        console.error('[preload] parse error', parseErr);
+        alert('Failed to parse preloaded file: ' + (parseErr && parseErr.message ? parseErr.message : parseErr));
+        return;
+      }
+      if (!Array.isArray(rows) || rows.length === 0) {
+        console.warn('[preload] parsed rows empty or not array', rows);
+        alert('Preloaded file parsed to 0 rows. Check file contents.');
+        return;
+      }
       processPreloadedData(rows);
-      setTimeout(()=> showDashboardAfterLoad(), 200);
-    } catch(e) { console.error(e); alert('Preload failed: ' + (e.message||e)); }
+      setTimeout(()=> showDashboardAfterLoad(), 150);
+      console.log('[preload] loaded rows:', rows.length);
+    } catch (err) {
+      console.error('[preload] unexpected error', err);
+      let msg = (err && err.message) ? err.message : String(err);
+      if (msg.toLowerCase().includes('cors')) {
+        msg = 'Network/CORS error while fetching the preloaded file. Check that the file is publicly accessible and raw.githubusercontent.com (or host) allows CORS.';
+      }
+      alert('Preload failed: ' + msg + '\nOpen browser DevTools Console (F12) for details.');
+    }
   });
 
-  // load saved (user-initiated)
+  // load saved only when user clicks
   document.getElementById('load-local-btn')?.addEventListener('click', ()=>{ const ok = loadFromLocalSync(); setTimeout(()=>showDashboardAfterLoad(), 150); });
 
   document.getElementById('file-input')?.addEventListener('change', ev=>handleFileImport(ev.target.files[0]));
@@ -803,29 +789,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if(!commodityRows.length){ alert('No data'); return; }
     const headers=['Date','Market','Commodity','Variety','Category','District','Min','Max','Modal'];
     const rows=commodityRows.map(r=>[new Date(r.date).toISOString().split('T')[0],r.market,r.commodity,r.variety,r.category,r.district,r.minPriceKg,r.maxPriceKg,r.modalPriceKg]);
-    const csv=[headers.join(','), ...rows.map(rr=>rr.map(cell=>typeof cell==='string' && cell.includes(',')?`"${cell.replace(/"/g,'""')}"`:cell).join(',')).join('\n')];
-    const link=document.createElement('a'); link.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv.join('\n')); link.download='agri_export.csv'; document.body.appendChild(link); link.click(); link.remove();
+    const csvArr=[headers.join(','), ...rows.map(rr=>rr.map(cell=>typeof cell==='string' && cell.includes(',')?`"${cell.replace(/"/g,'""')}"`:cell).join(','))];
+    const link=document.createElement('a'); link.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csvArr.join('\n')); link.download='agri_export.csv'; document.body.appendChild(link); link.click(); link.remove();
   });
   document.getElementById('clear-storage-btn')?.addEventListener('click', clearLocal);
 
-  // tabs and active states
-  function activateTab(id){
-    document.querySelectorAll('.nav-tabs button').forEach(b=>{ b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
-    const btn = document.getElementById(id);
-    if(btn){ btn.classList.add('active'); btn.setAttribute('aria-selected','true'); }
-  }
-  document.getElementById('tab-dashboard')?.addEventListener('click', ()=>{
-    document.getElementById('dashboard-content').classList.remove('hidden'); document.getElementById('prediction-content').classList.add('hidden'); document.getElementById('top-crops-content').classList.add('hidden');
-    activateTab('tab-dashboard');
-  });
-  document.getElementById('tab-prediction')?.addEventListener('click', ()=>{
-    document.getElementById('dashboard-content').classList.add('hidden'); document.getElementById('prediction-content').classList.remove('hidden'); document.getElementById('top-crops-content').classList.add('hidden');
-    activateTab('tab-prediction'); computeForecastAndRender();
-  });
-  document.getElementById('tab-top-crops')?.addEventListener('click', ()=>{
-    document.getElementById('dashboard-content').classList.add('hidden'); document.getElementById('prediction-content').classList.add('hidden'); document.getElementById('top-crops-content').classList.remove('hidden');
-    activateTab('tab-top-crops'); generateTopCropsUI();
-  });
+  // tabs
+  document.getElementById('tab-dashboard')?.addEventListener('click', ()=>{ document.getElementById('dashboard-content').classList.remove('hidden'); document.getElementById('prediction-content').classList.add('hidden'); document.getElementById('top-crops-content').classList.add('hidden'); document.querySelectorAll('.nav-tabs button').forEach(b=>b.classList.remove('active')); document.getElementById('tab-dashboard').classList.add('active'); });
+  document.getElementById('tab-prediction')?.addEventListener('click', ()=>{ document.getElementById('dashboard-content').classList.add('hidden'); document.getElementById('prediction-content').classList.remove('hidden'); document.getElementById('top-crops-content').classList.add('hidden'); document.querySelectorAll('.nav-tabs button').forEach(b=>b.classList.remove('active')); document.getElementById('tab-prediction').classList.add('active'); computeForecastAndRender(); });
+  document.getElementById('tab-top-crops')?.addEventListener('click', ()=>{ document.getElementById('dashboard-content').classList.add('hidden'); document.getElementById('prediction-content').classList.add('hidden'); document.getElementById('top-crops-content').classList.remove('hidden'); document.querySelectorAll('.nav-tabs button').forEach(b=>b.classList.remove('active')); document.getElementById('tab-top-crops').classList.add('active'); generateTopCropsUI(); });
 
   document.getElementById('market-select')?.addEventListener('change', renderWeatherForCurrentMarket);
 
@@ -836,61 +808,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const link = document.createElement('a'); link.href='data:text/csv;charset=utf-8,' + encodeURIComponent(csv); link.download='export_filtered.csv'; document.body.appendChild(link); link.click(); link.remove();
   });
 
-  // immediate filtering when date/category/variety change
+  // date inputs change should immediately re-filter
   document.getElementById('start-date')?.addEventListener('change', ()=>{ applyFilters(); });
   document.getElementById('end-date')?.addEventListener('change', ()=>{ applyFilters(); });
   document.getElementById('category-filter')?.addEventListener('change', ()=>{ populateCommodityList(); applyFilters(); });
   document.getElementById('variety-filter')?.addEventListener('change', ()=>{ applyFilters(); });
 
-  // MOBILE SIDEBAR TOGGLE
-  const mobileToggle = document.getElementById('mobile-sidebar-toggle');
-  const body = document.body;
-  function populateAllControlsBeforeOpen(){
-    populateMarketSelect();
-    populateCategoryFilter();
-    populateCommodityList();
-    populateVarietyFilter();
-    setDefaultDateRange();
-    applyFilters();
-  }
-  function setMobileToggleVisibility(){
-    if(window.innerWidth <= 900){
-      if(mobileToggle) mobileToggle.style.display='inline-flex';
-    } else {
-      if(mobileToggle) mobileToggle.style.display='none';
-      body.classList.remove('sidebar-open');
-    }
-  }
-  setMobileToggleVisibility();
-  window.addEventListener('resize', setMobileToggleVisibility);
-
-  if(mobileToggle){
-    mobileToggle.addEventListener('click', ()=>{
-      populateAllControlsBeforeOpen();
-      body.classList.toggle('sidebar-open');
-
-      // ensure first commodity visually selected for mobile
-      const firstBtn = document.querySelector('#commodity-list .commodity-btn');
-      if(firstBtn && !document.querySelector('#commodity-list .commodity-btn.selected')){
-        firstBtn.classList.add('selected');
-        currentCommodity = firstBtn.textContent;
-        populateVarietyFilter();
-      }
-    });
-  }
+  // mobile sidebar toggle
+  const mobileToggle = document.getElementById('mobile-sidebar-toggle'); const body = document.body;
+  function setMobileToggleVisibility(){ if(window.innerWidth <= 900){ mobileToggle.style.display='inline-block'; } else { mobileToggle.style.display='none'; body.classList.remove('sidebar-open'); } }
+  setMobileToggleVisibility(); window.addEventListener('resize', setMobileToggleVisibility);
+  mobileToggle?.addEventListener('click', ()=>{ body.classList.toggle('sidebar-open'); });
 
   // clicking outside sidebar on mobile closes it
-  document.addEventListener('click', (ev)=>{
-    if(window.innerWidth>900) return;
-    const sidebar = document.querySelector('.sidebar');
-    if(!sidebar) return;
-    if(body.classList.contains('sidebar-open')){
-      const mobileBtn = document.getElementById('mobile-sidebar-toggle');
-      if(!sidebar.contains(ev.target) && ev.target !== mobileBtn && !mobileBtn.contains(ev.target)){
-        body.classList.remove('sidebar-open');
-      }
-    }
-  });
+  document.addEventListener('click', (ev)=>{ if(window.innerWidth>900) return; const sidebar = document.querySelector('.sidebar'); if(!sidebar) return; if(body.classList.contains('sidebar-open') && !sidebar.contains(ev.target) && ev.target !== mobileToggle){ body.classList.remove('sidebar-open'); } });
+
+  // load saved cache but only show dashboard when user explicitly clicks load saved
+  loadFromLocalSync();
 });
 
 /* Modal add/edit (simple) */
