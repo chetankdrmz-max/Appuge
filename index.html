@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Smart FarmHer — Grow Good Sell Smart</title>
 
   <!-- UI libraries -->
@@ -14,144 +14,785 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/papaparse/5.4.1/papaparse.min.js"></script>
 
   <style>
-    :root{ --emerald:#10b981; --muted:#6b7280; --card:#ffffff; --bg:#f3f6f8; }
-    body{ background:var(--bg); font-family:Inter,system-ui; color:#0f172a; }
-
-    .card{ background:#fff; border-radius:12px; padding:16px; box-shadow:0 4px 12px rgba(0,0,0,0.05); }
-
-    /* Tabs */
-    .nav-tabs button{ padding:10px 14px; margin-right:8px; border:none; background:none; font-weight:500; color:#374151; }
-    .nav-tabs button.active{ border-bottom:3px solid var(--emerald); color:var(--emerald); font-weight:600; }
-
-    /* Snapshot table */
-    .snapshot-table{ overflow:auto; border:1px solid #e5e7eb; border-radius:8px; }
-    .snapshot-table th{ background:#f9fafb; font-weight:600; font-size:14px; padding:10px; text-align:left; }
-    .snapshot-table td{ padding:10px; border-top:1px solid #f3f4f6; font-size:14px; }
-
-    /* Top crops */
-    .recommend-card{ border:1px solid #e5e7eb; border-radius:12px; padding:12px; background:#fff; }
-    .top-recs{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; }
-
-    /* Commodity buttons */
-    .commodity-btn{ display:block; width:100%; padding:10px; text-align:left; border-radius:8px; border:none; background:transparent; }
-    .commodity-btn:hover{ background:#f3f4f6; }
-    .commodity-btn.selected{ background:var(--emerald); color:#fff; }
-
-    /* Scrollbar */
-    #commodity-list::-webkit-scrollbar{ width:12px; }
-    #commodity-list::-webkit-scrollbar-thumb{ background:#cbd5e1; border-radius:8px; }
-
-    /* Sticky filter */
-    .filters-sticky{ position:sticky; top:12px; }
-
-    /* Sidebar mobile overlay */
-    @media(max-width:900px){
-      .sidebar{ position:fixed; left:-320px; top:0; height:100vh; width:280px; background:#fff; z-index:1200; transition:left .2s; }
-      body.sidebar-open .sidebar{ left:0; }
-      .date-stack{ flex-direction:column; }
-      .date-stack input{ width:100%; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    :root{
+      --emerald:#10b981;
+      --muted:#6b7280;
+      --card:#ffffff;
+      --bg:#f3f6f8;
+    }
+    html,body { height:100%; margin:0; }
+    body {
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background:var(--bg);
+      color:#0f172a;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      margin:0;
     }
 
-    .chart-card,.forecast-card{ height:340px; }
+    /* Layout */
+    .card { background: var(--card); border-radius: 12px; padding: 16px; box-shadow: 0 6px 18px rgba(2,6,23,0.06); border: 1px solid rgba(15,23,42,0.04); }
+    .start-bg { background-image: url('icons/bg-desktop.jpg'); background-size:cover; background-position:center; min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:40px 20px 80px 20px; }
+    @media (max-width:768px){ .start-bg{ background-image:url('icons/bg-mobile.png'); } }
+
+    .small-muted { color: var(--muted); font-size:13px; }
+    .sidebar { width:280px; background:#fff; border-right:1px solid rgba(15,23,42,0.04); padding:20px; display:flex; flex-direction:column; gap:14px; height:calc(100vh - 40px); position:sticky; top:20px; }
+    .sidebar .list { max-height:320px; overflow:auto; border:1px solid rgba(15,23,42,0.04); border-radius:8px; padding:6px; }
+    .nav-tabs button{ padding:10px 14px; margin-right:8px; border:none; background:none; font-weight:500; color:#374151; cursor:pointer; }
+    .nav-tabs button.active{ border-bottom:3px solid var(--emerald); color:var(--emerald); font-weight:600; }
+    .snapshot-table { max-height:320px; overflow:auto; display:block; border-radius:8px; }
+    .snapshot-table table { width:100%; border-collapse:collapse; }
+    .snapshot-table td, .snapshot-table th { padding:8px; border-bottom:1px solid rgba(15,23,42,0.04); font-size:14px; }
+    .recommend-card { border-radius:10px; padding:12px; border:1px solid rgba(16,185,129,0.08); background:linear-gradient(180deg, rgba(16,185,129,0.02), transparent); }
+    .strategy-card { border-radius:10px; padding:14px; }
+    .top-recs { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; }
+
+    /* charts fixed heights */
+    .chart-card { height:300px; }
+    .forecast-card { height:300px; }
+
+    /* brand */
+    .brand-icon { width:34px; height:34px; display:inline-block; vertical-align:middle; margin-right:10px; border-radius:8px; object-fit:cover; }
+    .brand-title { display:inline-block; vertical-align:middle; line-height:1; }
+    .brand-sub { display:block; font-size:13px; color:var(--muted); margin-top:4px; }
+
+    /* commodity buttons */
+    .commodity-btn { display:block; width:100%; text-align:left; padding:10px; border-radius:8px; background:transparent; border:none; font-size:16px; color:inherit; }
+    .commodity-btn:hover { background:#f3f4f6; cursor:pointer; transition: background 120ms ease; }
+    .commodity-btn.selected { background:var(--emerald); color:#fff; box-shadow:0 6px 12px rgba(16,185,129,0.12); }
+
+    /* scrollbar styling for larger thumb */
+    #commodity-list::-webkit-scrollbar { width:12px; }
+    #commodity-list::-webkit-scrollbar-track { background:transparent; }
+    #commodity-list::-webkit-scrollbar-thumb { background: rgba(15,23,42,0.12); border-radius:8px; }
+
+    /* mobile overlay sidebar */
+    @media (max-width:900px) {
+      .sidebar { position:fixed; left:-340px; top:0; height:100vh; z-index:1400; box-shadow: 0 12px 40px rgba(2,6,23,0.2); transition:left 240ms ease; width:300px; padding-top:28px; }
+      body.sidebar-open .sidebar { left:0; }
+      .main-wrap { padding:14px; }
+      .card { padding:12px; border-radius:10px; }
+      .chart-card { height:260px; }
+      .date-stack { flex-direction:column; gap:8px; }
+      .date-stack input { width:100%; }
+      /* make commodity list thumb larger on mobile also */
+      #commodity-list::-webkit-scrollbar { width:14px; }
+    }
+
+    .filters-sticky { position:sticky; top:12px; }
+    input[type="date"]:focus, select:focus { outline: 2px solid rgba(16,185,129,0.12); border-radius:6px; }
+
+    /* fix for mobile toggle button */
+    #mobile-sidebar-toggle { display:none; }
+    @media (max-width:900px){ #mobile-sidebar-toggle { display:inline-block; } }
+
   </style>
 </head>
 <body>
 
-<!-- START SCREEN -->
-<div id="start-screen" class="start-bg">
-  <div class="card" style="max-width:900px;margin:auto">
-    <div style="display:flex;align-items:center;gap:10px;">
-      <img src="icons/Smartfarmher.png" class="brand-icon" style="width:40px;height:40px"/>
-      <div>
-        <div style="font-size:22px;font-weight:700;color:var(--emerald)">Smart FarmHer</div>
-        <div style="font-size:14px;color:var(--muted)">Grow Good Sell Smart</div>
-      </div>
-    </div>
-    <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
-      <input id="file-input" type="file" accept=".csv,.xlsx,.xls,text/csv" class="border p-2 rounded flex-1"/>
-      <button id="start-analysis-btn" class="bg-emerald-500 text-white px-4 py-2 rounded"><i class="fas fa-cloud-download-alt"></i> Load Preloaded Data</button>
-      <button id="load-local-btn" class="bg-gray-800 text-white px-4 py-2 rounded"><i class="fas fa-save"></i> Load Saved</button>
-    </div>
-  </div>
-</div>
-
-<!-- MAIN -->
-<div id="main-dashboard" style="display:none;min-height:100vh;flex">
-  <!-- Sidebar -->
-  <aside class="sidebar filters-sticky p-4 border-r" aria-label="Filters">
-    <label class="text-sm text-gray-500">Markets</label>
-    <select id="market-select" class="w-full p-2 border rounded mb-3"></select>
-
-    <label class="text-sm text-gray-500">Category</label>
-    <select id="category-filter" class="w-full p-2 border rounded mb-3"><option>All</option></select>
-
-    <label class="text-sm text-gray-500">Commodity</label>
-    <div id="commodity-list" class="list border rounded p-2 max-h-48 overflow-auto mb-3"></div>
-
-    <label class="text-sm text-gray-500">Variety</label>
-    <select id="variety-filter" class="w-full p-2 border rounded mb-3"><option>All</option></select>
-
-    <label class="text-sm text-gray-500">Date range</label>
-    <div class="date-stack flex gap-2 mb-3">
-      <input id="start-date" type="date" class="p-2 border rounded flex-1"/>
-      <input id="end-date" type="date" class="p-2 border rounded flex-1"/>
-    </div>
-    <div class="flex gap-2">
-      <button id="apply-filters" class="bg-emerald-500 text-white rounded px-3 py-2 flex-1">Apply</button>
-      <button id="reset-filters" class="bg-gray-100 rounded px-3 py-2 flex-1">Reset</button>
-    </div>
-  </aside>
-
-  <!-- Content -->
-  <main class="flex-1 p-4">
-    <div style="display:flex;align-items:center;justify-content:space-between">
-      <div style="display:flex;align-items:center;gap:8px">
-        <img src="icons/Smartfarmher.png" class="w-8 h-8"/>
-        <div style="font-weight:700;color:var(--emerald);font-size:20px">Smart FarmHer</div>
-      </div>
-      <button id="mobile-sidebar-toggle" class="md:hidden p-2 border rounded"><i class="fas fa-bars"></i></button>
-    </div>
-
-    <!-- Tabs -->
-    <div class="nav-tabs mt-4 mb-4">
-      <button id="tab-dashboard" class="active">Dashboard</button>
-      <button id="tab-prediction">Predictive Analysis</button>
-      <button id="tab-top-crops">Top 10 Crops</button>
-    </div>
-
-    <!-- Dashboard -->
-    <section id="dashboard-content">
-      <div class="card mb-4">
-        <h3 class="font-semibold mb-2">Latest Market Snapshot <span id="snapshot-date" class="text-gray-500 text-sm"></span></h3>
-        <div class="snapshot-table">
-          <table class="min-w-full text-sm">
-            <thead><tr><th>Market</th><th>Commodity</th><th>Variety</th><th>Modal</th><th>Min</th><th>Max</th><th>Trend</th></tr></thead>
-            <tbody id="snapshot-table-body"><tr><td colspan="7" class="text-center text-gray-400">No data</td></tr></tbody>
-          </table>
+  <!-- START SCREEN -->
+  <div id="start-screen" class="start-bg">
+    <div class="card" style="max-width:900px; width:100%; margin-top:24px;">
+      <div style="display:flex;align-items:center;gap:12px;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:12px">
+          <img src="icons/Smartfarmher.png" alt="Smart FarmHer" class="brand-icon" style="width:44px;height:44px"/>
+          <div>
+            <div class="brand-title" style="font-size:24px;font-weight:700;color:var(--emerald)">Smart FarmHer</div>
+            <div class="brand-sub">Grow Good Sell Smart</div>
+          </div>
+        </div>
+        <div>
+          <button id="open-settings" class="small-muted" title="Help & Settings" style="background:none;border:none;color:var(--muted)"><i class="fas fa-ellipsis-v"></i></button>
         </div>
       </div>
-    </section>
 
-    <!-- Prediction -->
-    <section id="prediction-content" class="hidden">
-      <div class="card forecast-card mb-4">
-        <h3 class="font-semibold mb-2">90-Day Price Forecast</h3>
-        <canvas id="forecast-chart"></canvas>
+      <div style="margin-top:18px;display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+        <input id="file-input" type="file" accept=".csv,.xlsx,.xls,text/csv" style="flex:1;padding:12px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)"/>
+        <button id="start-analysis-btn" style="background:var(--emerald);color:white;padding:10px 18px; border:none; border-radius:8px; cursor:pointer;"><i class="fas fa-cloud-download-alt"></i> Load Preloaded Data</button>
+        <button id="load-local-btn" style="padding:10px 18px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);background:#111827;color:white;"><i class="fas fa-save"></i> Load Saved</button>
       </div>
-    </section>
 
-    <!-- Top crops -->
-    <section id="top-crops-content" class="hidden">
-      <div class="card">
-        <h3 class="font-semibold mb-2">Top Crop Recommendations</h3>
-        <div id="top-crops-container" class="top-recs"></div>
+      <div style="margin-top:8px" class="small-muted">Tip: import your CSV/XLSX file with market rows. Use saved data to keep it on your phone. Use "Load Preloaded Data" to fetch dataset hosted in repo.</div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main-dashboard" style="display:flex;min-height:100vh">
+    <!-- Sidebar -->
+    <aside class="sidebar filters-sticky" aria-label="Controls">
+      <div style="display:flex;align-items:center;gap:8px">
+        <img src="icons/Smartfarmher.png" class="brand-icon" style="width:34px;height:34px"/>
+        <div style="font-weight:700;color:var(--emerald)">Smart FarmHer</div>
       </div>
-    </section>
-  </main>
-</div>
+
+      <div>
+        <label class="small-muted">Markets</label>
+        <select id="market-select" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);margin-top:6px"></select>
+        <div style="margin-top:8px;display:flex;gap:8px">
+          <button id="geo-locate" title="Detect my location" class="small-muted" style="padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);background:#fff"><i class="fas fa-location-arrow"></i></button>
+          <button id="manage-markets-btn" title="Manage markets" class="small-muted" style="padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);background:#fff">Manage</button>
+        </div>
+      </div>
+
+      <div>
+        <label class="small-muted">Category</label>
+        <select id="category-filter" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);margin-top:6px"><option>All</option></select>
+      </div>
+
+      <div>
+        <label class="small-muted">Commodity</label>
+        <div id="commodity-list" class="list" aria-label="Commodities list"></div>
+      </div>
+
+      <div>
+        <label class="small-muted">Variety</label>
+        <select id="variety-filter" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);margin-top:6px"><option>All</option></select>
+      </div>
+
+      <div>
+        <label class="small-muted">Date range</label>
+        <div class="date-stack" style="display:flex;gap:8px;margin-top:6px">
+          <!-- stacked on small screens via CSS -->
+          <input id="start-date" type="date" placeholder="dd-mm-yyyy" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)"/>
+          <input id="end-date" type="date" placeholder="dd-mm-yyyy" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)"/>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button id="apply-filters" style="flex:1;border:none;background:var(--emerald);color:#fff;padding:10px;border-radius:8px">Apply</button>
+        <button id="reset-filters" style="flex:1;border-radius:8px;border:1px solid rgba(15,23,42,0.06);background:#f3f4f6">Reset</button>
+      </div>
+
+      <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
+        <button id="add-record-btn" style="background:#2563eb;color:white;padding:10px;border-radius:8px;border:none"><i class="fas fa-plus"></i> Add Record</button>
+        <button id="import-csv-btn" style="background:#111827;color:white;padding:10px;border-radius:8px;border:none"><i class="fas fa-file-import"></i> Import CSV/XLSX</button>
+        <button id="export-all-btn" style="background:#eef2ff;padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.04)"><i class="fas fa-file-export"></i> Export CSV</button>
+        <button id="clear-storage-btn" style="background:#fff1f2;color:#9f1239;padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.04)"><i class="fas fa-trash"></i> Clear Local Save</button>
+      </div>
+    </aside>
+
+    <!-- Main area -->
+    <div class="flex-1 main-wrap" style="padding:24px;">
+      <header style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <img src="icons/Smartfarmher.png" class="brand-icon" style="width:36px;height:36px"/>
+          <div style="font-weight:700;color:var(--emerald);font-size:20px">Smart FarmHer</div>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:center">
+          <button id="mobile-sidebar-toggle" class="small-muted" title="Open filters" style="display:none;padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);background:#fff"><i class="fas fa-bars"></i></button>
+          <button id="show-help-btn" style="background:#f3f4f6;padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.04)">Help</button>
+        </div>
+      </header>
+
+      <!-- tabs -->
+      <div style="margin-bottom:16px" class="nav-tabs" role="tablist" aria-label="Main tabs">
+        <button id="tab-dashboard" class="active" role="tab" aria-selected="true">Dashboard</button>
+        <button id="tab-prediction" role="tab">Predictive Analysis</button>
+        <button id="tab-top-crops" role="tab">Top 10 Crops</button>
+      </div>
+
+      <!-- Dashboard content -->
+      <div id="dashboard-content">
+        <div class="card" style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <h3 style="margin:0">Latest Market Snapshot <span id="snapshot-date" class="small-muted"></span></h3>
+              <div class="small-muted" style="margin-top:4px">Latest day across markets</div>
+            </div>
+            <div class="small-muted">Rows: <span id="snapshot-count">0</span></div>
+          </div>
+
+          <div class="snapshot-table card" style="margin-top:12px; padding:0;">
+            <table>
+              <thead><tr><th style="text-align:left;padding:12px;background:#fbfdff">Market</th><th style="text-align:left;padding:12px;background:#fbfdff">Commodity</th><th style="text-align:left;padding:12px;background:#fbfdff">Variety</th><th style="text-align:right;padding:12px;background:#fbfdff">Modal</th><th style="text-align:right;padding:12px;background:#fbfdff">Min</th><th style="text-align:right;padding:12px;background:#fbfdff">Max</th><th style="text-align:center;padding:12px;background:#fbfdff">Trend</th></tr></thead>
+              <tbody id="snapshot-table-body"><tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">No data loaded.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="summary-cards" class="grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:12px"></div>
+
+        <div style="display:grid;grid-template-columns:1fr 320px;gap:12px;margin-bottom:12px">
+          <div class="card chart-card">
+            <h4 style="margin:0 0 10px 0">Historical Price Trends</h4>
+            <div style="height:220px"><canvas id="price-chart" style="width:100%;height:100%"></canvas></div>
+          </div>
+
+          <div class="card">
+            <h4 style="margin:0 0 10px 0">7-day Weather (Selected Market)</h4>
+            <div id="weather-container" class="small-muted">Add market coordinates or use location detection to view forecast.</div>
+            <div style="margin-top:10px" class="small-muted">Weather provided by Open-Meteo (free)</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <h4 style="margin:0">Detailed Price Data (last 20 rows)</h4>
+            <button id="export-csv" style="background:#0f172a;color:white;padding:8px;border-radius:8px;border:none"><i class="fas fa-download"></i> Export CSV</button>
+          </div>
+          <div style="margin-top:12px; overflow:auto; max-height:320px">
+            <table style="width:100%;border-collapse:collapse">
+              <thead style="background:#fbfdff"><tr><th style="padding:10px;text-align:left">Date</th><th style="padding:10px">Market</th><th style="padding:10px">Commodity</th><th style="padding:10px">Variety</th><th style="padding:10px">Modal</th><th style="padding:10px">Min</th><th style="padding:10px">Max</th><th style="padding:10px">Trend</th></tr></thead>
+              <tbody id="price-table-body"><tr><td colspan="8" style="padding:12px;color:var(--muted);text-align:center">No data</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Predictive Analysis -->
+      <div id="prediction-content" class="hidden">
+        <div class="card forecast-card" style="margin-bottom:12px">
+          <h3 style="margin:0 0 8px 0">90-Day Price Forecast</h3>
+          <div style="height:260px"><canvas id="forecast-chart" style="width:100%;height:100%"></canvas></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
+          <div id="strategy-signal-card" class="strategy-card strategy-wait card">
+            <h4 style="margin:0">Strategic Signal</h4>
+            <div id="strategy-signal" style="font-size:28px;font-weight:800;margin-top:8px">—</div>
+            <div id="strategy-detail" class="small-muted" style="margin-top:8px">—</div>
+          </div>
+
+          <div class="strategy-card card">
+            <h4 style="margin:0">Peak Profitability</h4>
+            <div id="peak-month" style="font-size:28px;font-weight:700;margin-top:8px">—</div>
+            <div class="small-muted" style="margin-top:8px">Historically best month</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px" id="prediction-outlook"></div>
+      </div>
+
+      <!-- Top 10 Crops -->
+      <div id="top-crops-content" class="hidden">
+        <div class="card" style="margin-bottom:12px">
+          <h3 style="margin:0 0 8px 0">Top Crop Recommendations</h3>
+          <div id="top-crops-container" class="top-recs"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Add/Edit Modal (simple) -->
+  <div id="modal-add-record" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;padding:16px;z-index:50">
+    <div class="card" style="max-width:720px;margin:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h3 style="margin:0">Add / Edit Record</h3>
+        <button onclick="document.getElementById('modal-add-record').style.display='none'">✕</button>
+      </div>
+      <form id="record-form" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px">
+        <div><label class="small-muted">Date</label><input id="rec-date" type="date" required style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)"></div>
+        <div><label class="small-muted">Market</label><select id="rec-market" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)"></select></div>
+        <div><label class="small-muted">Commodity</label><input id="rec-commodity" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)"></div>
+        <div><label class="small-muted">Variety</label><input id="rec-variety" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)"></div>
+        <div><label class="small-muted">Category</label><input id="rec-category" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)"></div>
+        <div><label class="small-muted">District</label><input id="rec-district" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)"></div>
+        <div><label class="small-muted">Modal (₹/kg)</label><input id="rec-modal" type="number" step="0.01" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)"></div>
+        <div><label class="small-muted">Min (₹/kg)</label><input id="rec-min" type="number" step="0.01" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)"></div>
+        <div><label class="small-muted">Max (₹/kg)</label><input id="rec-max" type="number" step="0.01" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)"></div>
+
+        <div style="grid-column:1 / -1;display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+          <button type="submit" style="background:var(--emerald);border:none;color:white;padding:8px 12px;border-radius:8px">Save</button>
+          <button type="button" id="delete-record-btn" style="background:#fee2e2;border:1px solid #fca5a5;color:#9f1239;padding:8px;border-radius:8px">Delete</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
 <script>
-// keep your same JS logic here (unchanged, just UI fixes above)
+/* ===================
+   Configuration
+   =================== */
+const PRELOADED_RAW_URL = 'https://raw.githubusercontent.com/chetankdrmz-max/Smart_FarmHer/refs/heads/main/data/Raw_Concatenated.csv';
+const STORAGE_KEY = 'agri_dashboard_store_v1';
+const IDB_DBNAME = 'agri_analyst_db_v1';
+const IDB_STORE = 'store_v1';
+
+/* In-memory */
+let commodityRows = [];
+let markets = [];
+let filteredRows = [];
+let currentCommodity = '';
+let currentVariety = 'All';
+let priceChart=null, forecastChart=null;
+
+/* IndexedDB helpers */
+function openIDB(){ return new Promise((res,rej)=>{ const req=indexedDB.open(IDB_DBNAME,1); req.onupgradeneeded=e=>{ const db=e.target.result; if(!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE); }; req.onsuccess=()=>res(req.result); req.onerror=()=>rej(req.error); }); }
+async function idbPut(k,v){ const db=await openIDB(); return new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).put(v,k); tx.oncomplete=()=>res(true); tx.onerror=()=>rej(tx.error); }); }
+async function idbGet(k){ const db=await openIDB(); return new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readonly'); const req=tx.objectStore(IDB_STORE).get(k); req.onsuccess=()=>res(req.result); req.onerror=()=>rej(req.error); }); }
+async function idbDelete(k){ const db=await openIDB(); return new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readwrite'); const req=tx.objectStore(IDB_STORE).delete(k); tx.oncomplete=()=>res(true); tx.onerror=()=>rej(tx.error); }); }
+
+/* Save/Load */
+async function saveToLocal(){
+  const store={rows:commodityRows,markets};
+  try {
+    const json=JSON.stringify(store);
+    localStorage.setItem(STORAGE_KEY,json);
+    if(json.length > 500000){ try{ await idbPut(STORAGE_KEY,store); localStorage.removeItem(STORAGE_KEY);}catch(e){} }
+    return {method:'localStorage'};
+  } catch(e){
+    await idbPut(STORAGE_KEY, store);
+    return {method:'indexedDB'};
+  }
+}
+function loadFromLocalSync(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){ const parsed = JSON.parse(raw); commodityRows = parsed.rows||[]; markets = parsed.markets||[]; refreshAllUI(); return true; }
+  } catch(e){ console.warn(e); }
+  idbGet(STORAGE_KEY).then(obj => { if(obj){ commodityRows = obj.rows || []; markets = obj.markets || []; refreshAllUI(); } }).catch(()=>{});
+  return !!localStorage.getItem(STORAGE_KEY);
+}
+async function clearLocal(){ if(!confirm('Clear all saved data?')) return; try{ localStorage.removeItem(STORAGE_KEY); await idbDelete(STORAGE_KEY);}catch(e){} commodityRows=[]; markets=[]; refreshAllUI(); alert('Cleared'); }
+
+/* CSV fallback parse */
+function parseCSVFallback(text,{delimiter=',',header=true}={}){ const rows=[]; let cur='',row=[],inQuotes=false; for(let i=0;i<text.length;i++){ const ch=text[i], next=text[i+1]; if(ch==='"'){ if(inQuotes && next==='"'){ cur+='"'; i++; } else { inQuotes=!inQuotes; } continue; } if(ch===delimiter && !inQuotes){ row.push(cur); cur=''; continue; } if((ch=='\n' || ch=='\r') && !inQuotes){ if(ch=='\r' && next=='\n') i++; row.push(cur); rows.push(row); row=[]; cur=''; continue; } cur+=ch; } if(cur!=='' || row.length>0){ row.push(cur); rows.push(row);} if(!header) return rows; const headers=rows.shift().map(h=>h.trim()); return rows.map(r=>{ const obj={}; for(let i=0;i<headers.length;i++) obj[headers[i]] = r[i]!==undefined ? r[i] : ''; return obj; });}
+function parseCSVText(text,options={header:true,skipEmptyLines:true}){ return new Promise((resolve)=>{ if(typeof Papa !== 'undefined'){ try{ const res = Papa.parse(text, Object.assign({}, options)); resolve(res.data); }catch(e){ resolve(parseCSVFallback(text,{header:options.header})); } } else { resolve(parseCSVFallback(text,{header:options.header})); } }); }
+
+/* Row normalization */
+function normalizeRow(r){
+  const dateStr = r.Date || r.date || r.DATE || r['Date'] || '';
+  const commodity = (r.Commodity || r.commodity || r.Item || r['Commodity'] || '').toString().trim();
+  const variety = (r.Variety || r.variety || r.SubVariety || r['Variety'] || '').toString().trim() || 'Default';
+  const market = (r.Market || r.market || r.MarketName || r['Market'] || '').toString().trim() || 'Default Market';
+  const district = (r.District || r.district || r['District'] || '').toString().trim();
+  const modal = parseFloat(r.Modal_Price_Kg || r.Modal_Price || r.modal || r.Modal_Price || r['Modal'] || 0) || 0;
+  const minp = parseFloat(r.Min_Price_Kg || r.Min_Price || r.Min_Price_Q || r['Min'] || 0) || 0;
+  const maxp = parseFloat(r.Max_Price_Kg || r.Max_Price || r.Max_Price_Q || r['Max'] || 0) || 0;
+  const category = (r.Category || r.category || r['Category'] || '').toString().trim() || 'Other';
+  const date = dateStr ? new Date(dateStr) : null;
+  return { date, commodity, variety, market, district, modalPriceKg: modal, minPriceKg: minp, maxPriceKg: maxp, category };
+}
+
+function processPreloadedData(rows){
+  const parsed = rows.map(normalizeRow).filter(item => item && item.date instanceof Date && !isNaN(item.date.getTime()) && item.commodity);
+  if(!parsed.length){ alert('No valid rows found in preloaded file.'); return; }
+  const foundMarkets = [...new Set(parsed.map(p=>p.market||'Default Market'))];
+  if(markets.length===0){ markets = foundMarkets.map(n=>({name:n,lat:null,lon:null})); } else { foundMarkets.forEach(m=>{ if(!markets.find(x=>x.name===m)) markets.push({name:m,lat:null,lon:null}); }); }
+  commodityRows = [...commodityRows, ...parsed];
+  commodityRows.sort((a,b)=>new Date(a.date)-new Date(b.date));
+  saveToLocal().catch(()=>{});
+  refreshAllUI();
+}
+
+/* UI refresh */
+function refreshAllUI(){
+  populateMarketSelect();
+  populateCategoryFilter();
+  populateCommodityList();
+  populateVarietyFilter();
+  setDefaultDateRange();
+  applyFilters();
+  updateSnapshotTable();
+  updateSummaryCards();
+  updatePriceChart();
+  updateDataTable();
+  if(!document.getElementById('prediction-content').classList.contains('hidden')) computeForecastAndRender();
+}
+
+function populateMarketSelect(){
+  const sel = document.getElementById('market-select'); if(!sel) return;
+  sel.innerHTML=''; markets.forEach(m=>{ const o=document.createElement('option'); o.value=m.name; o.textContent=m.name; sel.appendChild(o); });
+  if(markets.length===0){ markets.push({name:'Mysore (Bandipalya)', lat:12.2958, lon:76.6394}); populateMarketSelect(); }
+}
+
+function populateCategoryFilter(){
+  const cats = [...new Set(commodityRows.map(r=>r.category||'Other'))].sort(); const sel = document.getElementById('category-filter'); if(!sel) return;
+  sel.innerHTML = '<option value="All">All</option>'; cats.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
+}
+
+function populateCommodityList(){
+  const container = document.getElementById('commodity-list'); if(!container) return;
+  const selCat = (document.getElementById('category-filter')||{}).value || 'All';
+  const comms = [...new Set(commodityRows.filter(r => selCat==='All' || r.category===selCat).map(r=>r.commodity))].sort();
+  container.innerHTML='';
+  comms.forEach(c => {
+    const btn = document.createElement('button');
+    btn.textContent = c;
+    btn.className='commodity-btn';
+    btn.setAttribute('type','button');
+    btn.onclick = ()=>{ currentCommodity = c; document.querySelectorAll('#commodity-list .commodity-btn').forEach(x=>x.classList.remove('selected')); btn.classList.add('selected'); populateVarietyFilter(); applyFilters(); };
+    container.appendChild(btn);
+  });
+  if(!currentCommodity && comms.length) { currentCommodity = comms[0]; const first = container.querySelector('.commodity-btn'); if(first) first.classList.add('selected'); populateVarietyFilter(); }
+}
+
+function populateVarietyFilter(){
+  const sel = document.getElementById('variety-filter'); if(!sel) return;
+  const varieties = [...new Set(commodityRows.filter(r=>r.commodity===currentCommodity).map(r=>r.variety || 'Default'))].sort();
+  sel.innerHTML = '<option value="All">All</option>'; varieties.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o); });
+  sel.value = 'All';
+}
+
+function setDefaultDateRange(){
+  if(!commodityRows.length) return;
+  const dates = commodityRows.map(r=>new Date(r.date));
+  const maxDate = new Date(Math.max.apply(null, dates));
+  const minDate = new Date(Math.min.apply(null, dates));
+  const endEl = document.getElementById('end-date'); const startEl = document.getElementById('start-date');
+  if(endEl) endEl.value = maxDate.toISOString().split('T')[0];
+  const startCandidate = new Date(maxDate); startCandidate.setFullYear(startCandidate.getFullYear()-1);
+  if(startEl) startEl.value = (startCandidate < minDate ? minDate : startCandidate).toISOString().split('T')[0];
+}
+
+function applyFilters(){
+  const startVal = (document.getElementById('start-date')||{}).value;
+  const endVal = (document.getElementById('end-date')||{}).value;
+  const start = startVal ? new Date(startVal) : new Date('1970-01-01');
+  const end = endVal ? new Date(endVal) : new Date('2100-01-01');
+  const cat = (document.getElementById('category-filter')||{}).value || 'All';
+  currentVariety = (document.getElementById('variety-filter')||{}).value || 'All';
+  filteredRows = commodityRows.filter(r=>{
+    return (cat === 'All' || r.category === cat) &&
+           (r.commodity === currentCommodity) &&
+           (currentVariety === 'All' || r.variety === currentVariety) &&
+           (new Date(r.date) >= start && new Date(r.date) <= end);
+  }).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  updateDashboardUI();
+}
+
+function resetFilters(){ document.getElementById('category-filter').value='All'; currentCommodity=''; populateCommodityList(); setDefaultDateRange(); applyFilters(); }
+
+function updateDashboardUI(){
+  document.getElementById('main-header')?.textContent && (document.getElementById('main-header').textContent = currentCommodity ? `${currentCommodity} Dashboard` : 'Dashboard');
+  updateSnapshotTable(); updateSummaryCards(); updatePriceChart(); updateDataTable();
+  renderWeatherForCurrentMarket();
+  if(!document.getElementById('prediction-content').classList.contains('hidden')) computeForecastAndRender();
+}
+
+function updateSnapshotTable(){
+  const body = document.getElementById('snapshot-table-body'); if(!body) return;
+  if(!commodityRows.length){ body.innerHTML='<tr><td colspan="7" style="text-align:center;padding:12px;color:var(--muted)">No data loaded.</td></tr>'; return; }
+  const dates = commodityRows.map(r=>new Date(r.date));
+  const latest = new Date(Math.max.apply(null, dates));
+  const latestStr = latest.toISOString().split('T')[0];
+  document.getElementById('snapshot-date').textContent = `(${latest.toLocaleDateString('en-GB')})`;
+  const snapshot = commodityRows.filter(r => (new Date(r.date)).toISOString().split('T')[0] === latestStr);
+  document.getElementById('snapshot-count').textContent = snapshot.length;
+  if(!snapshot.length){ body.innerHTML='<tr><td colspan="7" style="text-align:center;padding:12px;color:var(--muted)">No data for latest date.</td></tr>'; return; }
+  body.innerHTML = snapshot.map(s => `<tr><td style="padding:12px">${s.market}</td><td style="padding:12px">${s.commodity}</td><td style="padding:12px">${s.variety}</td><td style="padding:12px;text-align:right">₹${s.modalPriceKg.toFixed(2)}</td><td style="padding:12px;text-align:right">₹${s.minPriceKg.toFixed(2)}</td><td style="padding:12px;text-align:right">₹${s.maxPriceKg.toFixed(2)}</td><td style="padding:12px;text-align:center">${trendSymbolForRow(s)}</td></tr>`).join('');
+}
+
+function trendSymbolForRow(r){
+  const rows = commodityRows.filter(x=>x.commodity===r.commodity && x.market===r.market).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const idx = rows.findIndex(x=>new Date(x.date).getTime()===new Date(r.date).getTime());
+  if(idx <= 0) return '—';
+  const prev = rows[idx-1].modalPriceKg;
+  if(r.modalPriceKg > prev) return '<span style="color:#16a34a">▲</span>';
+  if(r.modalPriceKg < prev) return '<span style="color:#ef4444">▼</span>';
+  return '—';
+}
+
+function updateSummaryCards(){
+  const container = document.getElementById('summary-cards'); if(!container) return;
+  if(!filteredRows.length){ container.innerHTML = '<div class="card" style="text-align:center;color:var(--muted)">No data for selection</div>'; return; }
+  const latest = filteredRows[filteredRows.length-1];
+  const prices = filteredRows.map(r=>r.modalPriceKg);
+  const avg = prices.reduce((a,b)=>a+b,0)/prices.length;
+  const minP = Math.min(...prices), maxP = Math.max(...prices);
+  const cards = [
+    {title:'Latest Price', value:`₹${latest.modalPriceKg.toFixed(2)}`, sub: currentCommodity || ''},
+    {title:'Average Price', value:`₹${avg.toFixed(2)}`, sub:'Period Avg'},
+    {title:'Lowest Price', value:`₹${minP.toFixed(2)}`, sub:'In Period'},
+    {title:'Highest Price', value:`₹${maxP.toFixed(2)}`, sub:'In Period'},
+  ];
+  container.innerHTML = cards.map(c=>`<div class="card"><div style="color:var(--muted);font-size:13px">${c.title}</div><div style="font-weight:700;font-size:20px;margin-top:6px">${c.value}</div><div class="small-muted">${c.sub||''}</div></div>`).join('');
+}
+
+/* Price chart uses filteredRows */
+function updatePriceChart(){
+  const ctxEl = document.getElementById('price-chart'); if(!ctxEl) return;
+  const ctx = ctxEl.getContext('2d');
+  if(priceChart) priceChart.destroy();
+  if(!filteredRows.length) { ctx.clearRect(0,0,ctxEl.width, ctxEl.height); return; }
+  const data = filteredRows.map(r=>({x:new Date(r.date), y:r.modalPriceKg}));
+  priceChart = new Chart(ctx, {
+    type:'line',
+    data:{ datasets:[ { label:'Modal Price', data: data, borderColor:'rgb(34,197,94)', backgroundColor:'rgba(16,185,129,0.06)', fill:true, tension:0.25, pointRadius:2 } ] },
+    options: { parsing:false, maintainAspectRatio:false, responsive:true, scales:{ x:{ type:'time', time:{ unit:'month', tooltipFormat:'MMM yyyy' }, ticks:{ autoSkip: true, maxRotation:0, minRotation:0 } }, y:{ beginAtZero:false } }, plugins:{ legend:{display:true} } }
+  });
+}
+
+/* Data table */
+function updateDataTable(){
+  const body = document.getElementById('price-table-body'); if(!body) return;
+  if(!filteredRows.length){ body.innerHTML = '<tr><td colspan="8" style="padding:12px;text-align:center;color:var(--muted)">No data</td></tr>'; return; }
+  const last = filteredRows.slice(-20).reverse();
+  body.innerHTML = last.map(r=>`<tr style="border-bottom:1px solid rgba(15,23,42,0.04)"><td style="padding:10px">${new Date(r.date).toLocaleDateString()}</td><td style="padding:10px">${r.market}</td><td style="padding:10px">${r.commodity}</td><td style="padding:10px">${r.variety}</td><td style="padding:10px;text-align:right">₹${r.modalPriceKg.toFixed(2)}</td><td style="padding:10px;text-align:right">₹${r.minPriceKg.toFixed(2)}</td><td style="padding:10px;text-align:right">₹${r.maxPriceKg.toFixed(2)}</td><td style="padding:10px;text-align:center">${trendSymbolForRow(r)}</td></tr>`).join('');
+}
+
+/* Forecasting (lightweight) */
+function computeSimpleForecast(series, days=90){
+  if(!series.length) return [];
+  const prices = series.map(s=>s.y);
+  const smooth = prices.map((v,i,arr)=>{
+    const w=5; const start=Math.max(0,i-w+1); const seg=arr.slice(start,i+1);
+    return seg.reduce((a,b)=>a+b,0)/seg.length;
+  });
+  const N = Math.min(60, smooth.length);
+  const x = [], y=[];
+  for(let i=0;i<N;i++){ x.push(i); y.push(smooth[smooth.length-N+i]); }
+  const xm = x.reduce((a,b)=>a+b,0)/x.length;
+  const ym = y.reduce((a,b)=>a+b,0)/y.length;
+  let num=0, den=0;
+  for(let i=0;i<x.length;i++){ num += (x[i]-xm)*(y[i]-ym); den += (x[i]-xm)*(x[i]-xm); }
+  const slope = den === 0 ? 0 : num/den;
+  const intercept = ym - slope*xm;
+  const lastDate = new Date(series[series.length-1].date);
+  const forecasts = [];
+  for(let d=1; d<=days; d++){
+    const pred = intercept + slope*(x.length-1 + d);
+    forecasts.push({ date: new Date(lastDate.getTime() + 24*3600*1000*d), y: Math.max(0, pred) });
+  }
+  return forecasts;
+}
+
+/* Render forecast & strategy */
+function computeForecastAndRender(){
+  if(!filteredRows.length){ document.getElementById('strategy-signal').textContent='—'; return; }
+  const series = filteredRows.map(r=>({date:new Date(r.date), y:r.modalPriceKg}));
+  const forecast = computeSimpleForecast(series, 90);
+  const ctxEl = document.getElementById('forecast-chart'); if(!ctxEl) return;
+  const ctx = ctxEl.getContext('2d');
+  if(forecastChart) forecastChart.destroy();
+  const dataHist = series.map(s=>({x:s.date, y:s.y}));
+  const dataFc = forecast.map(f=>({x:f.date, y:f.y}));
+  forecastChart = new Chart(ctx, {
+    type:'line',
+    data:{
+      datasets:[
+        { label:'Historical Price', data: dataHist, borderColor:'#10b981', backgroundColor:'rgba(16,185,129,0.06)', fill:true, tension:0.25, pointRadius:0 },
+        { label:'Forecasted Price', data: dataFc, borderColor:'#ef4444', borderDash:[6,6], pointRadius:0, fill:false, tension:0.25 }
+      ]
+    },
+    options:{ parsing:false, maintainAspectRatio:false, responsive:true, scales:{ x:{ type:'time', time:{unit:'month', tooltipFormat:'MMM yyyy'} }, y:{ beginAtZero:false } }, plugins:{ legend:{display:true} } }
+  });
+
+  // strategy
+  const recent = series.slice(-90).map(s=>s.y);
+  if(recent.length < 30){
+    document.getElementById('strategy-signal').textContent = 'Not enough data';
+    document.getElementById('strategy-detail').textContent = 'Not enough historical data for a reliable forecast (requires more history).';
+    document.getElementById('strategy-signal-card').className = 'strategy-card card';
+    document.getElementById('peak-month').textContent = '—';
+    document.getElementById('prediction-outlook').innerHTML = '<div class="card">Not enough historical data for a reliable forecast (requires more history).</div>';
+    return;
+  }
+
+  const startAvg = recent.slice(0,7).reduce((a,b)=>a+b,0)/7;
+  const endAvg = recent.slice(-7).reduce((a,b)=>a+b,0)/7;
+  const pctChange = (endAvg - startAvg) / Math.max(1, startAvg);
+
+  if(pctChange > 0.08){
+    document.getElementById('strategy-signal').textContent = 'Grow Now';
+    document.getElementById('strategy-detail').textContent = 'Prices are currently above average and trend is positive. Consider planting now.';
+    document.getElementById('strategy-signal-card').className = 'strategy-card strategy-buy card';
+  } else if(pctChange < -0.05){
+    document.getElementById('strategy-signal').textContent = 'Wait';
+    document.getElementById('strategy-detail').textContent = 'Prices are trending down. Consider waiting or selling existing stocks.';
+    document.getElementById('strategy-signal-card').className = 'strategy-card strategy-wait card';
+  } else {
+    document.getElementById('strategy-signal').textContent = 'Consider';
+    document.getElementById('strategy-detail').textContent = 'Market is relatively stable — moderate risk.';
+    document.getElementById('strategy-signal-card').className = 'strategy-card card';
+  }
+
+  const monthly = {};
+  filteredRows.forEach(r=>{ const m = new Date(r.date).getMonth()+1; monthly[m] = monthly[m] || []; monthly[m].push(r.modalPriceKg); });
+  const avgByMonth = Object.keys(monthly).map(k=>({m:parseInt(k), avg: monthly[k].reduce((a,b)=>a+b,0)/monthly[k].length}));
+  if(avgByMonth.length){ const peak = avgByMonth.reduce((a,b)=>a.avg > b.avg ? a : b); const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; document.getElementById('peak-month').textContent = months[peak.m-1]; } else document.getElementById('peak-month').textContent='—';
+
+  document.getElementById('prediction-outlook').innerHTML = `<div class="card"><strong>Forecast summary:</strong> 90-day outlook is ${(pctChange>0.08)?'positive':(pctChange<-0.05?'negative':'neutral')}. Average forecast price (30d): ₹${(forecast.slice(0,30).reduce((a,b)=>a+b.y,0)/Math.max(1,forecast.slice(0,30).length)).toFixed(2)}</div>`;
+}
+
+/* Recommendations */
+function generateRecommendations(count=10){
+  const commodities = [...new Set(commodityRows.map(r=>r.commodity))];
+  const recs = commodities.map(name=>{
+    const rows = commodityRows.filter(r=>r.commodity===name).slice(-60);
+    if(rows.length < 6) return null;
+    const prices = rows.map(r=>r.modalPriceKg);
+    const avg = prices.reduce((a,b)=>a+b,0)/prices.length;
+    const change = (prices[prices.length-1]-prices[0]) / Math.max(1, prices[0]);
+    const variance = prices.reduce((s,p)=>s+Math.pow(p-avg,2),0)/prices.length;
+    const vol = Math.sqrt(variance)/Math.max(1,avg);
+    const score = (1 + change) / (vol + 0.05);
+    const risk = vol < 0.1 ? 'Low' : vol < 0.2 ? 'Medium' : 'High';
+    return {commodity:name, avgPrice:avg, priceChangePct: change*100, volatility: vol, score, risk};
+  }).filter(Boolean).sort((a,b)=>b.score-a.score);
+  return recs.slice(0,count);
+}
+
+function generateTopCropsUI(){
+  const recs = generateRecommendations(10);
+  const cont = document.getElementById('top-crops-container'); if(!cont) return;
+  if(!recs.length){ cont.innerHTML = '<div class="small-muted">Not enough data for recommendations.</div>'; return; }
+  cont.innerHTML = recs.map((r,i)=>`<div class="recommend-card"><div style="display:flex;justify-content:space-between;align-items:start"><div><div style="font-size:14px;color:var(--muted)">#${i+1}</div><div style="font-weight:700;font-size:18px">${r.commodity}</div><div class="small-muted" style="margin-top:6px">Avg ₹${r.avgPrice.toFixed(2)}/kg</div></div><div style="text-align:right"><span style="background:${r.risk==='Low'?'#ecfdf5':r.risk==='Medium'?'#fffbeb':'#fff1f2'};padding:6px 8px;border-radius:12px;font-size:12px">${r.risk} RISK</span></div></div></div>`).join('');
+}
+
+/* Weather */
+async function renderWeatherForCurrentMarket(){
+  const sel = document.getElementById('market-select'); if(!sel) return;
+  const marketName = sel.value;
+  const market = markets.find(m=>m.name===marketName);
+  const container = document.getElementById('weather-container'); if(!container) return;
+  if(!market || !market.lat || !market.lon){ container.innerHTML = `<div class="small-muted">No coordinates for "${marketName}". Use Manage or location detect to add coordinates.</div>`; return; }
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${market.lat}&longitude=${market.lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto`;
+  try {
+    const res = await fetch(url); const json = await res.json();
+    if(!json.daily){ container.innerHTML = `<div class="small-muted">Weather not available</div>`; return; }
+    const days = json.daily.time.map((t,i)=>({date:t, max: json.daily.temperature_2m_max[i], min: json.daily.temperature_2m_min[i], precip: json.daily.precipitation_sum[i]}));
+    container.innerHTML = days.map(d=>`<div style="margin-bottom:6px"><strong>${new Date(d.date).toLocaleDateString()}</strong>: ${d.max}°/${d.min}° - Rain ${d.precip} mm</div>`).join('');
+  } catch(e){ container.innerHTML = `<div class="small-muted">Weather fetch error</div>`; console.warn(e); }
+}
+
+/* File import handling */
+async function handleFileImport(file){
+  if(!file) return;
+  try {
+    const name = file.name.toLowerCase();
+    if(name.endsWith('.csv') || file.type.includes('text')) {
+      const text = await file.text();
+      const rows = await parseCSVText(text, {header:true,skipEmptyLines:true});
+      processPreloadedData(rows);
+    } else {
+      const ab = await file.arrayBuffer();
+      const wb = XLSX.read(ab, {type:'array'});
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, {defval:''});
+      processPreloadedData(rows);
+    }
+    alert('Imported successfully');
+    showDashboardAfterLoad();
+  } catch(e){ console.error(e); alert('Import failed: ' + e.message); }
+}
+
+/* Startup & buttons wiring */
+function showDashboardAfterLoad(){ document.getElementById('start-screen').style.display='none'; document.getElementById('main-dashboard').style.display='flex'; document.body.classList.remove('sidebar-open'); refreshAllUI(); window.scrollTo(0,0); }
+
+document.addEventListener('DOMContentLoaded', () => {
+  // ensure start screen visible by default and main hidden
+  document.getElementById('start-screen').style.display='block';
+  document.getElementById('main-dashboard').style.display='none';
+
+  // wire start preloaded
+  document.getElementById('start-analysis-btn')?.addEventListener('click', async ()=>{
+    if(!PRELOADED_RAW_URL) { alert('No PRELOADED_RAW_URL configured'); return; }
+    try {
+      const resp = await fetch(PRELOADED_RAW_URL);
+      if(!resp.ok) throw new Error('Fetch failed: ' + resp.status);
+      const contentType = resp.headers.get('content-type') || '';
+      const blob = await resp.blob();
+      let rows = [];
+      if(contentType.includes('text') || PRELOADED_RAW_URL.toLowerCase().endsWith('.csv')){
+        const text = await blob.text();
+        rows = await parseCSVText(text, {header:true,skipEmptyLines:true});
+      } else {
+        const ab = await blob.arrayBuffer();
+        const wb = XLSX.read(ab, { type: 'array' });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+      }
+      processPreloadedData(rows);
+      setTimeout(()=> showDashboardAfterLoad(), 200);
+    } catch(e) { console.error(e); alert('Preload failed: ' + (e.message||e)); }
+  });
+
+  // load saved only when user clicks
+  document.getElementById('load-local-btn')?.addEventListener('click', ()=>{ const ok = loadFromLocalSync(); setTimeout(()=>showDashboardAfterLoad(), 150); });
+
+  document.getElementById('file-input')?.addEventListener('change', ev=>handleFileImport(ev.target.files[0]));
+  document.getElementById('import-csv-btn')?.addEventListener('click', ()=>document.getElementById('file-input').click());
+  document.getElementById('apply-filters')?.addEventListener('click', applyFilters);
+  document.getElementById('reset-filters')?.addEventListener('click', resetFilters);
+  document.getElementById('add-record-btn')?.addEventListener('click', openAddModal);
+  document.getElementById('export-all-btn')?.addEventListener('click', ()=>{
+    if(!commodityRows.length){ alert('No data'); return; }
+    const headers=['Date','Market','Commodity','Variety','Category','District','Min','Max','Modal'];
+    const rows=commodityRows.map(r=>[new Date(r.date).toISOString().split('T')[0],r.market,r.commodity,r.variety,r.category,r.district,r.minPriceKg,r.maxPriceKg,r.modalPriceKg]);
+    const csv=[headers.join(','), ...rows.map(rr=>rr.map(cell=>typeof cell==='string' && cell.includes(',')?`"${cell.replace(/"/g,'""')}"`:cell).join(',')).join('\n')];
+    const link=document.createElement('a'); link.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv.join('\n')); link.download='agri_export.csv'; document.body.appendChild(link); link.click(); link.remove();
+  });
+  document.getElementById('clear-storage-btn')?.addEventListener('click', clearLocal);
+
+  // tabs
+  document.getElementById('tab-dashboard')?.addEventListener('click', ()=>{
+    document.getElementById('dashboard-content').classList.remove('hidden'); document.getElementById('prediction-content').classList.add('hidden'); document.getElementById('top-crops-content').classList.add('hidden');
+    document.querySelectorAll('.nav-tabs button').forEach(b=>b.classList.remove('active')); document.getElementById('tab-dashboard').classList.add('active');
+  });
+  document.getElementById('tab-prediction')?.addEventListener('click', ()=>{
+    document.getElementById('dashboard-content').classList.add('hidden'); document.getElementById('prediction-content').classList.remove('hidden'); document.getElementById('top-crops-content').classList.add('hidden');
+    document.querySelectorAll('.nav-tabs button').forEach(b=>b.classList.remove('active')); document.getElementById('tab-prediction').classList.add('active'); computeForecastAndRender();
+  });
+  document.getElementById('tab-top-crops')?.addEventListener('click', ()=>{
+    document.getElementById('dashboard-content').classList.add('hidden'); document.getElementById('prediction-content').classList.add('hidden'); document.getElementById('top-crops-content').classList.remove('hidden');
+    document.querySelectorAll('.nav-tabs button').forEach(b=>b.classList.remove('active')); document.getElementById('tab-top-crops').classList.add('active'); generateTopCropsUI();
+  });
+
+  document.getElementById('market-select')?.addEventListener('change', renderWeatherForCurrentMarket);
+
+  document.getElementById('export-csv')?.addEventListener('click', ()=>{
+    const rows = filteredRows.map(r => [new Date(r.date).toISOString().split('T')[0], r.market, r.commodity, r.variety, r.minPriceKg, r.maxPriceKg, r.modalPriceKg]);
+    if(!rows.length){ alert('No visible rows'); return; }
+    const csv = ['Date,Market,Commodity,Variety,Min,Max,Modal', ...rows.map(r=>r.join(','))].join('\n');
+    const link = document.createElement('a'); link.href='data:text/csv;charset=utf-8,' + encodeURIComponent(csv); link.download='export_filtered.csv'; document.body.appendChild(link); link.click(); link.remove();
+  });
+
+  // immediate re-filter on date/category/variety change
+  document.getElementById('start-date')?.addEventListener('change', ()=>{ applyFilters(); });
+  document.getElementById('end-date')?.addEventListener('change', ()=>{ applyFilters(); });
+  document.getElementById('category-filter')?.addEventListener('change', ()=>{ populateCommodityList(); applyFilters(); });
+  document.getElementById('variety-filter')?.addEventListener('change', ()=>{ applyFilters(); });
+
+  // mobile sidebar toggle
+  const mobileToggle = document.getElementById('mobile-sidebar-toggle');
+  function setMobileToggleVisibility(){ if(window.innerWidth <= 900){ mobileToggle.style.display='inline-block'; } else { mobileToggle.style.display='none'; document.body.classList.remove('sidebar-open'); } }
+  setMobileToggleVisibility(); window.addEventListener('resize', setMobileToggleVisibility);
+  mobileToggle?.addEventListener('click', ()=>{ document.body.classList.toggle('sidebar-open'); });
+
+  // clicking outside sidebar on mobile closes it
+  document.addEventListener('click', (ev)=>{
+    if(window.innerWidth>900) return;
+    const sidebar = document.querySelector('.sidebar');
+    if(!sidebar) return;
+    if(document.body.classList.contains('sidebar-open') && !sidebar.contains(ev.target) && !mobileToggle.contains(ev.target)){
+      document.body.classList.remove('sidebar-open');
+    }
+  });
+
+  // initial attempt to load saved state (but do not auto open dashboard)
+  loadFromLocalSync();
+});
+
+/* Modal add/edit (simple) */
+function openAddModal(){
+  document.getElementById('modal-add-record').style.display='flex';
+  document.getElementById('delete-record-btn').style.display='none';
+  document.getElementById('rec-market').innerHTML = markets.map(m=>`<option value="${m.name}">${m.name}</option>`).join('');
+  document.getElementById('record-form').onsubmit = (e)=>{
+    e.preventDefault();
+    const newRow = {
+      date: new Date(document.getElementById('rec-date').value),
+      market: document.getElementById('rec-market').value,
+      commodity: document.getElementById('rec-commodity').value,
+      variety: document.getElementById('rec-variety').value || 'Default',
+      category: document.getElementById('rec-category').value || 'Other',
+      district: document.getElementById('rec-district').value || '',
+      modalPriceKg: parseFloat(document.getElementById('rec-modal').value) || 0,
+      minPriceKg: parseFloat(document.getElementById('rec-min').value) || 0,
+      maxPriceKg: parseFloat(document.getElementById('rec-max').value) || 0
+    };
+    commodityRows.push(newRow);
+    commodityRows.sort((a,b)=>new Date(a.date)-new Date(b.date));
+    saveToLocal().catch(()=>{});
+    document.getElementById('modal-add-record').style.display='none';
+    refreshAllUI();
+  };
+}
 </script>
+
 </body>
 </html>
