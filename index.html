@@ -111,11 +111,7 @@
   <div id="main-dashboard" style="display:flex;min-height:100vh">
     <!-- Sidebar -->
     <aside class="sidebar filters-sticky" aria-label="Controls">
-      <div style="display:flex;align-items:center;gap:8px">
-        <img src="icons/Smartfarmher.png" class="brand-icon" style="width:32px;height:32px"/>
-        <div style="font-weight:700;color:var(--emerald)">Smart FarmHer</div>
-      </div>
-
+     
       <div>
         <label class="small-muted">Markets</label>
         <select id="market-select" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);margin-top:6px"></select>
@@ -164,18 +160,15 @@
     <!-- Main area -->
     <div class="flex-1 main-wrap" style="padding:24px;">
       <header style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
-        <div style="display:flex;align-items:center;gap:12px">
-          <button id="mobile-sidebar-toggle" style="display:none;background:none;border:1px solid rgba(15,23,42,0.06);padding:8px;border-radius:8px"><i class="fas fa-bars"></i></button>
-          <div>
-            <h2 id="main-header" style="margin:0;font-size:22px;font-weight:700">Dashboard</h2>
-            <div class="small-muted">Quick market insights & crop recommendations</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:10px;align-items:center">
-          <button id="get-recommendations" style="background:#10b981;color:white;padding:10px 14px;border-radius:8px;border:none"><i class="fas fa-lightbulb"></i> Get Recommendations</button>
-          <button id="show-help-btn" style="background:#f3f4f6;padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.04)">Help</button>
-        </div>
-      </header>
+        <header style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+  <div style="display:flex;align-items:center;gap:8px">
+    <img src="icons/Smartfarmher.png" class="brand-icon" style="width:28px;height:28px"/>
+    <div style="font-weight:700;color:var(--emerald);font-size:20px">Smart FarmHer</div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <button id="show-help-btn" style="background:#f3f4f6;padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.04)">Help</button>
+  </div>
+</header>
 
       <!-- tabs -->
       <div style="margin-bottom:16px" class="nav-tabs">
